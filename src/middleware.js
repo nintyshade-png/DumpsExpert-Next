@@ -123,6 +123,7 @@ export async function middleware(request) {
     "/api/trending",
     "/api/announcement",
     "/api/general-faqs",
+    "/api/itcert-faqs",
     "/api/content1",
     "/api/content2",
     "/api/dumps",

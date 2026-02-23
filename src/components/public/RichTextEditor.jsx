@@ -96,6 +96,141 @@ const RichTextEditor = ({ value, onChange, error = "", label = "Editor" }) => {
     }
   };
 
+  /* ------------------ CLEAR STYLE HELPERS ------------------ */
+  const clearStyle = (styleProp) => {
+    try {
+      restoreSelection();
+      editorRef.current.focus();
+
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+
+      // If collapsed selection, try to clear inline styles (span/font/bgcolor)
+      // first, then fall back to clearing nearest block ancestor.
+      if (range.collapsed) {
+        let node = sel.anchorNode;
+        if (node.nodeType === 3) node = node.parentNode;
+
+        // Search up from the node for any inline element carrying the style
+        let cur = node;
+        let found = null;
+        while (cur && cur !== editorRef.current) {
+          try {
+            if (cur.style && cur.style[styleProp]) {
+              found = cur;
+              break;
+            }
+            if (
+              styleProp === "backgroundColor" &&
+              cur.hasAttribute &&
+              cur.hasAttribute("bgcolor")
+            ) {
+              found = cur;
+              break;
+            }
+            if (
+              styleProp === "color" &&
+              cur.tagName === "FONT" &&
+              cur.hasAttribute &&
+              cur.hasAttribute("color")
+            ) {
+              found = cur;
+              break;
+            }
+          } catch (e) {
+            // ignore
+          }
+          cur = cur.parentNode;
+        }
+
+        if (found) {
+          if (found.style && found.style[styleProp]) {
+            found.style[styleProp] = "";
+            if (!found.getAttribute("style")) found.removeAttribute("style");
+          }
+          if (
+            styleProp === "backgroundColor" &&
+            found.hasAttribute &&
+            found.hasAttribute("bgcolor")
+          )
+            found.removeAttribute("bgcolor");
+          if (
+            styleProp === "color" &&
+            found.tagName === "FONT" &&
+            found.hasAttribute &&
+            found.hasAttribute("color")
+          )
+            found.removeAttribute("color");
+
+          onChange(editorRef.current.innerHTML);
+          return;
+        }
+
+        // fallback: clear style on nearest block ancestor
+        let block = node;
+        while (
+          block &&
+          !/^(P|DIV|LI|H1|H2|H3|SECTION|ARTICLE)$/i.test(block.tagName)
+        ) {
+          block = block.parentNode;
+        }
+        if (block && block.style && block.style[styleProp]) {
+          block.style[styleProp] = "";
+          if (!block.getAttribute("style")) block.removeAttribute("style");
+        }
+        onChange(editorRef.current.innerHTML);
+        return;
+      }
+
+      // For a range selection, iterate elements contained in the range and clear the style
+      let container = range.commonAncestorContainer;
+      if (container.nodeType === 3) container = container.parentNode;
+
+      const walker = document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_ELEMENT,
+        null,
+      );
+      let node = walker.currentNode;
+      while (node) {
+        try {
+          const nodeRange = document.createRange();
+          nodeRange.selectNodeContents(node);
+          if (
+            range.compareBoundaryPoints(Range.END_TO_START, nodeRange) >= 0 ||
+            range.compareBoundaryPoints(Range.START_TO_END, nodeRange) <= 0
+          ) {
+            node = walker.nextNode();
+            continue;
+          }
+
+          if (node.style && node.style[styleProp]) {
+            node.style[styleProp] = "";
+            if (!node.getAttribute("style")) node.removeAttribute("style");
+          }
+
+          // remove legacy attributes
+          if (styleProp === "backgroundColor" && node.hasAttribute("bgcolor"))
+            node.removeAttribute("bgcolor");
+          if (
+            styleProp === "color" &&
+            node.tagName === "FONT" &&
+            node.hasAttribute("color")
+          )
+            node.removeAttribute("color");
+        } catch (e) {
+          // ignore
+        }
+        node = walker.nextNode();
+      }
+
+      onChange(editorRef.current.innerHTML);
+    } catch (e) {
+      console.error("clearStyle error", e);
+    }
+  };
+
   /* ------------------ FORMAT HANDLER ------------------ */
   const handleFormat = (format, value = null) => {
     if (format === "link") {
@@ -302,14 +437,39 @@ const RichTextEditor = ({ value, onChange, error = "", label = "Editor" }) => {
           ),
         )}
 
-        <input
-          type="color"
-          onChange={(e) => handleFormat("foreColor", e.target.value)}
-        />
-        <input
-          type="color"
-          onChange={(e) => handleFormat("backColor", e.target.value)}
-        />
+        <div className="flex items-center gap-1">
+          <input
+            type="color"
+            title="Text color"
+            onChange={(e) => handleFormat("foreColor", e.target.value)}
+            className="w-8 h-8 p-0 border rounded"
+          />
+          <button
+            type="button"
+            title="Clear text color"
+            className="px-2 py-1 border rounded hover:bg-gray-200"
+            onClick={() => clearStyle("color")}
+          >
+            A×
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <input
+            type="color"
+            title="Background color"
+            onChange={(e) => handleFormat("backColor", e.target.value)}
+            className="w-8 h-8 p-0 border rounded"
+          />
+          <button
+            type="button"
+            title="Clear background color (No fill)"
+            className="px-2 py-1 border rounded hover:bg-gray-200"
+            onClick={() => clearStyle("backgroundColor")}
+          >
+            ☐
+          </button>
+        </div>
       </div>
 
       {/* Editor */}

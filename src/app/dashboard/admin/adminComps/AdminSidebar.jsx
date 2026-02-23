@@ -122,7 +122,7 @@ const ShoppingCartIcon = ({ className = "" }) => (
   </svg>
 );
 
-const GraduationCapIcon = ({ className = "" }) => (
+const GraduationCapIcon = ({ className = "w-5 h-5" }) => (
   <svg
     className={className}
     fill="none"
@@ -246,6 +246,7 @@ const iconMap = {
   Blog: NewspaperIcon,
   Contact: MailIcon,
   "Manage General FAQs": QuestionIcon,
+  "IT Certifications FAQs": QuestionIcon,
 };
 
 const sidebarItems = [
@@ -343,6 +344,10 @@ const sidebarItems = [
           {
             label: "IT Certifications Content",
             to: "/dashboard/admin/adminPages/ItCertificationsContent",
+          },
+          {
+            label: "IT Certifications FAQs",
+            to: "/dashboard/admin/adminPages/ItCertFaqs",
           },
           {
             label: "Guarantee Page",

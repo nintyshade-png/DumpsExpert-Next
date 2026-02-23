@@ -1,50 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import "react-quill-new/dist/quill.snow.css"; // ✅ Load Quill CSS
+import RichTextEditor from "@/components/public/RichTextEditor";
+import ItCertFaqsAdmin from "@/app/dashboard/admin/adminPages/ItCertFaqs/page";
 
-// Dynamically import to avoid SSR issues in Next.js
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
-
-const COLORS = [
-  "#000000",
-  "#FF0000",
-  "#00FF00",
-  "#0000FF",
-  "#FFA500",
-  "#800080",
-  "#808080",
-  "#FFFFFF",
-  "#FFD700",
-  "#008080",
-];
-
-const modules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ color: COLORS }, { background: COLORS }],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["link", "blockquote", "code-block"],
-    ["clean"],
-  ],
-};
-
-const formats = [
-  "header",
-  "bold",
-  "italic",
-  "underline",
-  "strike",
-  "list",
-  "bullet",
-  "link",
-  "blockquote",
-  "code-block",
-  "color",
-  "background",
-];
+// Using the project's `RichTextEditor` (contentEditable) for alignment controls
 
 export default function ItCertificationsContentEditor() {
   const [upperPara, setUpperPara] = useState("");
@@ -128,15 +88,7 @@ export default function ItCertificationsContentEditor() {
           Upper Paragraph (Introduction - shown at top)
         </label>
         <div className="border border-gray-300 rounded-lg">
-          <ReactQuill
-            value={upperPara}
-            onChange={setUpperPara}
-            theme="snow"
-            placeholder="Write the introductory paragraph here..."
-            modules={modules}
-            formats={formats}
-            className="bg-white"
-          />
+          <RichTextEditor value={upperPara} onChange={setUpperPara} label="" />
         </div>
         <p className="text-xs text-gray-500 mt-2">
           This content will appear at the top of the IT Certifications page,
@@ -150,15 +102,7 @@ export default function ItCertificationsContentEditor() {
           Lower Paragraph (Detailed Content - shown after cards)
         </label>
         <div className="border border-gray-300 rounded-lg">
-          <ReactQuill
-            value={lowerPara}
-            onChange={setLowerPara}
-            theme="snow"
-            placeholder="Write the detailed content here..."
-            modules={modules}
-            formats={formats}
-            className="bg-white"
-          />
+          <RichTextEditor value={lowerPara} onChange={setLowerPara} label="" />
         </div>
         <p className="text-xs text-gray-500 mt-2">
           This content will appear at the bottom of the IT Certifications page,
@@ -178,6 +122,11 @@ export default function ItCertificationsContentEditor() {
       >
         {saving ? "Saving..." : "Save Content"}
       </button>
+
+      {/* Inline FAQ management */}
+      <div className="mt-8">
+        <ItCertFaqsAdmin />
+      </div>
     </div>
   );
 }

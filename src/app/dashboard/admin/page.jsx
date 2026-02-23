@@ -86,7 +86,7 @@ const PackageIcon = ({ className = "" }) => (
   </svg>
 );
 
-const GraduationCapIcon = ({ className = "" }) => (
+const GraduationCapIcon = ({ className = "w-6 h-6" }) => (
   <svg
     className={className}
     fill="none"

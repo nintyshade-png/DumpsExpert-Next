@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ImageWithSkeleton from "@/components/ImageWithSkeleton";
+import ItCertFaqs from "@/components/public/ItCertFaqs";
 import sapExamdumps from "@/assets/userAssets/sap examdumps.webp";
 // ✅ Enable ISR for better performance
 export const dynamic = "force-dynamic";
@@ -194,6 +195,31 @@ async function getItCertificationsContent() {
 }
 
 /* ===========================
+   ✅ Fetch IT Certifications FAQs
+   =========================== */
+async function getItCertFaqs() {
+  try {
+    const baseUrl = getBaseURL();
+    const url = `${baseUrl}/api/itcert-faqs`;
+
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
+
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json) ? json : json || [];
+  } catch (error) {
+    console.error("❌ [IT FAQs] Fetch error:", error.message);
+    return [];
+  }
+}
+
+/* ===========================
    ✅ Dynamic Metadata
    =========================== */
 export async function generateMetadata() {
@@ -259,6 +285,7 @@ export default async function itcertificationsPage() {
 
   const dumpsData = await getDumpsData();
   const itCertContent = await getItCertificationsContent();
+  const itCertFaqs = await getItCertFaqs();
 
   const renderTime = Date.now() - startTime;
   console.log(
@@ -284,9 +311,9 @@ export default async function itcertificationsPage() {
         {/* Blur overlay on top of image */}
         <div className="absolute inset-0 backdrop-blur-sm bg-white/10"></div>
       </div>
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 bg-black/20 backdrop-blur-sm rounded-3xl">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 bg-white/95 backdrop-blur-sm rounded-3xl">
         {/* Header */}
-        <h1 className="text-2xl p-6 sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center text-white drop-shadow-[0_8px_30px_rgba(0,0,0,0.6)] mb-6 sm:mb-8 md:mb-10 lg:mb-12">
+        <h1 className="text-2xl p-6 sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center text-gray-900 mb-6 sm:mb-8 md:mb-10 lg:mb-12">
           IT Certifications Exam Dumps – Pass Your Certification on First
           Attempt
         </h1>
@@ -295,11 +322,11 @@ export default async function itcertificationsPage() {
         <div className="mb-6 sm:mb-8 px-4 sm:px-6 md:px-8">
           {itCertContent.upperPara ? (
             <div
-              className="text-white text-center text-sm sm:text-base md:text-lg leading-relaxed drop-shadow-lg prose prose-invert max-w-none prose-p:my-2 prose-strong:text-white prose-strong:font-bold"
+              className="text-gray-800 text-center text-sm sm:text-base md:text-lg leading-relaxed prose max-w-none prose-p:my-2 prose-strong:text-gray-900 prose-strong:font-bold"
               dangerouslySetInnerHTML={{ __html: itCertContent.upperPara }}
             />
           ) : (
-            <p className="text-white text-center text-sm sm:text-base md:text-lg leading-relaxed drop-shadow-lg">
+            <p className="text-gray-800 text-center text-sm sm:text-base md:text-lg leading-relaxed">
               Welcome to the ultimate destination for{" "}
               <strong>latest IT certification exam preparation</strong>. Get{" "}
               <strong>latest exam dumps</strong>,{" "}
@@ -393,6 +420,11 @@ export default async function itcertificationsPage() {
               />
             </div>
           </div>
+        )}
+
+        {/* FAQs Section (animated client component) */}
+        {itCertFaqs && itCertFaqs.length > 0 && (
+          <ItCertFaqs faqs={itCertFaqs} />
         )}
       </div>
     </div>
