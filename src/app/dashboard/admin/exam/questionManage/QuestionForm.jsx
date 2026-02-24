@@ -828,6 +828,16 @@ const QuestionForm = ({
                       </div>
                     </div>
                   ))}
+
+                  <div className="mt-3 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => addMatchingItem("left")}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                    >
+                      <Plus size={16} /> Add Item
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-white p-4 rounded-lg shadow-sm border-2 border-pink-300">
@@ -937,6 +947,16 @@ const QuestionForm = ({
                       </div>
                     </div>
                   ))}
+
+                  <div className="mt-3 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => addMatchingItem("right")}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                    >
+                      <Plus size={16} /> Add Item
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1203,6 +1223,59 @@ const QuestionForm = ({
               </div>
             </div>
           </div>
+
+          {/* Quick-add toolbar for modal: keeps add buttons visible at bottom so
+              user doesn't need to scroll to the top to add options/columns */}
+          {(isModal || formData.questionType === "matching") && (
+            <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur px-6 py-3 border-t flex items-center justify-between gap-4 z-30">
+              <div className="flex items-center gap-3">
+                {formData.questionType !== "matching" ? (
+                  <button
+                    type="button"
+                    onClick={addOption}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                    aria-label="Add option"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Add Option
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => addMatchingItem("left")}
+                      className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                      aria-label="Add item to Column A"
+                    >
+                      Add Column A
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addMatchingItem("right")}
+                      className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                      aria-label="Add item to Column B"
+                    >
+                      Add Column B
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-gray-600">Quick actions</div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-4 pt-6 border-t">
             {!isModal && (

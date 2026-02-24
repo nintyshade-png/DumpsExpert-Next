@@ -22,7 +22,7 @@ export async function POST(request) {
     if (!examId) {
       return NextResponse.json(
         { success: false, message: "Exam ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -78,7 +78,7 @@ export async function POST(request) {
             ...option,
             images: uploadedImages,
           };
-        })
+        }),
       );
 
       questionData.options = processedOptions;
@@ -93,7 +93,7 @@ export async function POST(request) {
         return Promise.all(
           (items || []).map(async (item) => {
             const imageFiles = formData.getAll(
-              `matchingImages-${side}-${item.id}`
+              `matchingImages-${side}-${item.id}`,
             );
             const uploadedUrls = [];
 
@@ -107,24 +107,24 @@ export async function POST(request) {
 
             // Get pasted URLs from frontend
             const pastedUrls = JSON.parse(
-              data[`pastedImages-${side}-${item.id}`] || "[]"
+              data[`pastedImages-${side}-${item.id}`] || "[]",
             );
 
             return {
               ...item,
               images: [...uploadedUrls, ...pastedUrls], // Combine uploaded and pasted
             };
-          })
+          }),
         );
       };
 
       const processedLeftItems = await processItems(
         matchingPairs.leftItems,
-        "left"
+        "left",
       );
       const processedRightItems = await processItems(
         matchingPairs.rightItems,
-        "right"
+        "right",
       );
 
       questionData.matchingPairs = {
@@ -136,17 +136,40 @@ export async function POST(request) {
 
     console.log("✅ Final questionData before save:", questionData);
 
-    const newQuestion = await Question.create(questionData);
+    // If questionCode is empty, generate a stable unique code to avoid
+    // creating multiple empty-string duplicates under same exam.
+    if (!questionData.questionCode || questionData.questionCode.trim() === "") {
+      questionData.questionCode = `Q_${Date.now().toString(36)}`;
+    } else {
+      questionData.questionCode = String(questionData.questionCode).trim();
+    }
 
-    return NextResponse.json(
-      { success: true, data: newQuestion },
-      { status: 201 }
-    );
+    try {
+      const newQuestion = await Question.create(questionData);
+      return NextResponse.json(
+        { success: true, data: newQuestion },
+        { status: 201 },
+      );
+    } catch (err) {
+      // Handle duplicate key errors gracefully and return 409 Conflict
+      if (err && err.code === 11000) {
+        console.error("Duplicate key when creating question:", err.keyValue);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Duplicate question code for this exam. Please use a different Question Code.",
+          },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
   } catch (error) {
     console.error("❌ Error creating question:", error);
     return NextResponse.json(
       { success: false, message: error.message || "Failed to create question" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -213,7 +236,7 @@ export async function PUT(request, { params }) {
             images:
               uploadedImages.length > 0 ? uploadedImages : option.images || [],
           };
-        })
+        }),
       );
 
       updateData.options = processedOptions;
@@ -228,7 +251,7 @@ export async function PUT(request, { params }) {
         return Promise.all(
           (items || []).map(async (item) => {
             const imageFiles = formData.getAll(
-              `matchingImages-${side}-${item.id}`
+              `matchingImages-${side}-${item.id}`,
             );
             const uploadedUrls = [];
 
@@ -240,7 +263,7 @@ export async function PUT(request, { params }) {
             }
 
             const pastedUrls = JSON.parse(
-              data[`pastedImages-${side}-${item.id}`] || "[]"
+              data[`pastedImages-${side}-${item.id}`] || "[]",
             );
 
             return {
@@ -250,17 +273,17 @@ export async function PUT(request, { params }) {
                   ? [...uploadedUrls, ...pastedUrls]
                   : item.images || [],
             };
-          })
+          }),
         );
       };
 
       const processedLeftItems = await processItems(
         matchingPairs.leftItems,
-        "left"
+        "left",
       );
       const processedRightItems = await processItems(
         matchingPairs.rightItems,
-        "right"
+        "right",
       );
 
       updateData.matchingPairs = {
@@ -270,28 +293,44 @@ export async function PUT(request, { params }) {
       };
     }
 
-    const updatedQuestion = await Question.findByIdAndUpdate(
-      questionId,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    let updatedQuestion;
+    try {
+      updatedQuestion = await Question.findByIdAndUpdate(
+        questionId,
+        updateData,
+        { new: true, runValidators: true },
+      );
+    } catch (err) {
+      if (err && err.code === 11000) {
+        console.error("Duplicate key when updating question:", err.keyValue);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Duplicate question code for this exam. Please use a different Question Code.",
+          },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
 
     if (!updatedQuestion) {
       return NextResponse.json(
         { success: false, message: "Question not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
       { success: true, data: updatedQuestion },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("❌ Error updating question:", error);
     return NextResponse.json(
       { success: false, message: error.message || "Failed to update question" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -307,7 +346,7 @@ async function uploadImage(imageFile) {
       (error, result) => {
         if (error) reject(error);
         else resolve(result.secure_url);
-      }
+      },
     );
     stream.end(buffer);
   });
