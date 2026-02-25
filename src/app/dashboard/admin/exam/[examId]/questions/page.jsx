@@ -143,7 +143,7 @@ export default function QuestionsPage() {
               />
             </svg>
             Add Question
-          </button>
+          </button> 
         </div>
       </div>
 
