@@ -55,7 +55,7 @@ export default function SampleInstructionsPage() {
       alert("Please agree to the terms and conditions before starting.");
       return;
     }
-    router.push(`/exam/testPage/${slug}`);
+    router.push(`/exam/${slug}`);
   };
 
   if (loading) {
