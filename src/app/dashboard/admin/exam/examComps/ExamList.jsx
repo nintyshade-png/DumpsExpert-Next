@@ -40,7 +40,19 @@ const ExamList = ({ exams, onDelete, onEdit, onManageQuestions, onAddNew }) => {
               >
                 <td className="p-3 font-medium">{exam.code}</td>
                 <td className="p-3">{exam.name}</td>
-                <td className="p-3">{exam.duration} min</td>
+                <td className="p-3">
+                  <div className="font-semibold">
+                    {typeof exam.duration === "number" && exam.duration > 0
+                      ? `${exam.duration} min`
+                      : "--"}
+                  </div>
+                  {typeof exam.sampleDuration === "number" &&
+                    exam.sampleDuration > 0 && (
+                      <div className="text-xs text-gray-500">
+                        Sample: {exam.sampleDuration} min
+                      </div>
+                    )}
+                </td>
                 <td className="p-3">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-blue-600">

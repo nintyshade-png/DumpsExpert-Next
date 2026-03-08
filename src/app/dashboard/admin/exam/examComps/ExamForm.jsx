@@ -316,6 +316,7 @@ export default function ExamForm({ exam }) {
               label: "Sample Duration",
               type: "number",
             },
+            { name: "duration", label: "Full Duration (min)", type: "number" },
             {
               name: "passingScore",
               label: "Passing Score (%)",

@@ -23,7 +23,52 @@ export async function GET(req) {
         "Exam populate failed, returning without category:",
         populateError,
       );
+      // Fallback: fetch exams without populate, then resolve category names manually
       exams = await Exam.find(query).lean();
+      try {
+        // collect distinct category ids
+        const categoryIds = Array.from(
+          new Set(
+            exams
+              .map((e) => e.examCategory)
+              .filter((id) => id != null && id !== "")
+              .map((id) => id.toString()),
+          ),
+        );
+
+        if (categoryIds.length > 0) {
+          const ProductCategory = (
+            await import("@/models/productCategorySchema")
+          ).default;
+          const cats = await ProductCategory.find({ _id: { $in: categoryIds } })
+            .select("name")
+            .lean();
+          const catMap = cats.reduce((acc, c) => {
+            acc[c._id.toString()] = c;
+            return acc;
+          }, {});
+
+          exams = exams.map((ex) => {
+            const cid =
+              ex.examCategory &&
+              ex.examCategory.toString &&
+              ex.examCategory.toString();
+            if (cid && catMap[cid]) {
+              // attach the populated-like object so front-end can read examCategory.name
+              return {
+                ...ex,
+                examCategory: { _id: cid, name: catMap[cid].name },
+              };
+            }
+            return ex;
+          });
+        }
+      } catch (fallbackErr) {
+        console.error(
+          "Failed to resolve category names in fallback:",
+          fallbackErr,
+        );
+      }
     }
 
     // ✅ Get actual question count for each exam
