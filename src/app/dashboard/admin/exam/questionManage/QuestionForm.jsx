@@ -17,6 +17,7 @@ const QuestionForm = ({
   examId: propExamId,
   questionId: propQuestionId,
   isModal = false,
+  compact = false,
 }) => {
   // Get route parameters
   const params = useParams();
@@ -30,7 +31,6 @@ const QuestionForm = ({
   // State for form data
   const [formData, setFormData] = useState({
     questionText: "",
-    questionCode: "",
     questionType: "radio",
     difficulty: "medium",
     marks: 1,
@@ -73,12 +73,12 @@ const QuestionForm = ({
   const [isEditing, setIsEditing] = useState(false);
   const [imageUploadMode, setImageUploadMode] = useState({});
   const [imageResetKey, setImageResetKey] = useState(0);
+  const [compactImagesOpen, setCompactImagesOpen] = useState(!compact);
 
   // Function to reset form to initial state
   const resetForm = () => {
     setFormData({
       questionText: "",
-      questionCode: "",
       questionType: "radio",
       difficulty: "medium",
       marks: 1,
@@ -184,7 +184,6 @@ const QuestionForm = ({
             // Update form state with the fetched data
             setFormData({
               questionText: data.data.questionText || "",
-              questionCode: data.data.questionCode || "",
               questionType: data.data.questionType || "radio",
               difficulty: data.data.difficulty || "medium",
               marks: data.data.marks || 1,
@@ -419,9 +418,9 @@ const QuestionForm = ({
     return !cleaned || cleaned.length === 0;
   };
 
-  // Function to handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Submit handler supports 'addAnother' to save and reset form for adding more
+  const submitHandler = async (addAnother = false, e) => {
+    if (e && e.preventDefault) e.preventDefault();
     setLoading(true);
 
     try {
@@ -452,7 +451,6 @@ const QuestionForm = ({
 
       // Validate matching pairs if type is matching
       if (formData.questionType === "matching") {
-        // Check if all matching items have text
         const emptyLeftItems = formData.matchingPairs.leftItems.filter((item) =>
           isTextEmpty(item.text),
         );
@@ -466,7 +464,6 @@ const QuestionForm = ({
           return;
         }
 
-        // Check if all matches are set
         const leftItemsCount = formData.matchingPairs.leftItems.length;
         const matchesCount = Object.keys(
           formData.matchingPairs.correctMatches,
@@ -480,17 +477,14 @@ const QuestionForm = ({
       }
 
       const submitData = new FormData();
-
-      // Append basic form data
       submitData.append("examId", examId);
       submitData.append("questionText", formData.questionText);
 
-      console.log("📝 FormData State:", {
-        questionText: formData.questionText,
-        options: formData.options,
-        questionType: formData.questionType,
-      });
-      submitData.append("questionCode", formData.questionCode);
+      // Only include questionCode when editing or if explicitly provided
+      if (isEditing && formData.questionCode) {
+        submitData.append("questionCode", formData.questionCode);
+      }
+
       submitData.append("questionType", formData.questionType);
       submitData.append("difficulty", formData.difficulty);
       submitData.append("marks", formData.marks.toString());
@@ -499,7 +493,6 @@ const QuestionForm = ({
       submitData.append("topic", formData.topic);
       submitData.append("tags", JSON.stringify(formData.tags));
 
-      // Only send options and correctAnswers for non-matching types
       if (formData.questionType !== "matching") {
         submitData.append("options", JSON.stringify(formData.options));
         submitData.append(
@@ -512,12 +505,10 @@ const QuestionForm = ({
       submitData.append("explanation", formData.explanation);
       submitData.append("status", formData.status);
 
-      // Append multiple question images
       questionImageFiles.forEach((file) => {
         submitData.append("questionImages", file);
       });
 
-      // Append multiple option images (only for non-matching types)
       if (formData.questionType !== "matching") {
         Object.entries(optionImageFiles).forEach(([index, files]) => {
           files.forEach((file) => {
@@ -526,14 +517,12 @@ const QuestionForm = ({
         });
       }
 
-      // Append matching type data if applicable
       if (formData.questionType === "matching") {
         submitData.append(
           "matchingPairs",
           JSON.stringify(formData.matchingPairs),
         );
 
-        // Append matching images for each item
         formData.matchingPairs.leftItems.forEach((item) => {
           const key = `left-${item.id}`;
           const files = matchingImageFiles[key] || [];
@@ -541,7 +530,6 @@ const QuestionForm = ({
             submitData.append(`matchingImages-left-${item.id}`, file);
           });
 
-          // Append pasted URLs
           const pastedUrls = pastedImageUrls[key] || [];
           submitData.append(
             `pastedImages-left-${item.id}`,
@@ -556,7 +544,6 @@ const QuestionForm = ({
             submitData.append(`matchingImages-right-${item.id}`, file);
           });
 
-          // Append pasted URLs
           const pastedUrls = pastedImageUrls[key] || [];
           submitData.append(
             `pastedImages-right-${item.id}`,
@@ -569,7 +556,6 @@ const QuestionForm = ({
         isEditing && questionId !== "new"
           ? `/api/questions/${questionId}`
           : "/api/questions";
-
       const method = isEditing && questionId !== "new" ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -580,16 +566,16 @@ const QuestionForm = ({
       const result = await response.json();
 
       if (result.success) {
-        alert(`Question ${isEditing ? "updated" : "created"} successfully!`);
-
-        // Call onSuccess callback if provided
-        if (onSuccess) {
-          onSuccess(result.data);
-        }
-
-        // Reset form after successful creation (not editing)
-        if (!isEditing) {
-          resetForm();
+        // Notify and call onSuccess
+        if (addAnother) {
+          alert("Question saved. You can add another now.");
+          if (onSuccess) onSuccess(result.data);
+          // Reset form for next question only in create mode
+          if (!isEditing) resetForm();
+        } else {
+          alert(`Question ${isEditing ? "updated" : "created"} successfully!`);
+          if (onSuccess) onSuccess(result.data);
+          if (!isEditing) resetForm();
         }
       } else {
         alert(`Error: ${result.message}`);
@@ -612,41 +598,58 @@ const QuestionForm = ({
   }
 
   // Render component
+  const outerClass = isModal
+    ? ""
+    : compact
+      ? "max-w-3xl mx-auto p-2 bg-gray-50 min-h-screen"
+      : "max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen";
+
+  const innerClass = isModal
+    ? ""
+    : compact
+      ? "bg-white rounded shadow-sm p-3"
+      : "bg-white rounded-lg shadow-lg p-6";
+
   return (
-    <div
-      className={isModal ? "" : "max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen"}
-    >
-      <div className={isModal ? "" : "bg-white rounded-lg shadow-lg p-6"}>
+    <div className={outerClass}>
+      <div className={innerClass}>
         {!isModal && (
-          <h1 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-4">
+          <h1
+            className={`${compact ? "text-base" : "text-3xl"} font-bold mb-4 text-gray-800 border-b pb-3`}
+          >
             {isEditing ? "Edit" : "Add"} Question
           </h1>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-              <span className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">
-                1
-              </span>
+        <form
+          onSubmit={(e) => submitHandler(false, e)}
+          className={compact ? "space-y-3" : "space-y-6"}
+        >
+          <div
+            className={
+              compact
+                ? "p-2 rounded border bg-white"
+                : "bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200"
+            }
+          >
+            <h2
+              className={`${compact ? "text-sm font-medium mb-2" : "text-xl font-semibold mb-4"} text-gray-800 flex items-center`}
+            >
+              {compact ? (
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 text-xs">
+                  1
+                </span>
+              ) : (
+                <span className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">
+                  1
+                </span>
+              )}
               Basic Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Question Code
-                </label>
-                <input
-                  type="text"
-                  name="questionCode"
-                  value={formData.questionCode}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Q001"
-                />
-              </div>
-
+            <div
+              className={`grid grid-cols-1 md:grid-cols-2 gap-${compact ? "2" : "4"} mb-4`}
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Question Type
@@ -655,7 +658,11 @@ const QuestionForm = ({
                   name="questionType"
                   value={formData.questionType}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={
+                    compact
+                      ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs focus:ring-1 focus:ring-blue-500"
+                      : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  }
                 >
                   <option value="radio">Single Choice (MCQ)</option>
                   <option value="checkbox">Multiple Choice</option>
@@ -664,10 +671,11 @@ const QuestionForm = ({
               </div>
             </div>
 
-            <div className="mb-4">
+            <div className={compact ? "mb-2" : "mb-4"}>
               <RichTextEditor
-                label="Question Text *"
+                label={compact ? "" : "Question Text *"}
                 value={formData.questionText}
+                compact={compact}
                 onChange={(html) =>
                   setFormData((prev) => ({ ...prev, questionText: html }))
                 }
@@ -675,570 +683,541 @@ const QuestionForm = ({
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Question Images (Optional - Multiple)
-              </label>
-              <ImageUploader
-                resetKey={imageResetKey}
-                onImagesSelect={handleQuestionImagesSelect}
-              />
-            </div>
-          </div>
-
-          {formData.questionType === "matching" ? (
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-                <span className="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">
-                  2
-                </span>
-                Matching Items
-              </h2>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm border-2 border-purple-300">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-700 text-lg">
-                      Column A (Questions)
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => addMatchingItem("left")}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
-                    >
-                      <Plus size={18} /> Add Item
-                    </button>
-                  </div>
-
-                  {formData.matchingPairs.leftItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="mb-4 p-4 border-2 border-purple-200 rounded-lg bg-purple-50 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="font-bold text-purple-700 bg-white px-3 py-1 rounded-full">
-                          {item.id}
-                        </span>
-                        {formData.matchingPairs.leftItems.length > 2 && (
-                          <button
-                            type="button"
-                            onClick={() => removeMatchingItem("left", index)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-full transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-
-                      <RichTextEditor
-                        label=""
-                        value={item.text}
-                        onChange={(html) =>
-                          handleMatchingItemChange("left", index, "text", html)
-                        }
+              {compact ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setCompactImagesOpen((s) => !s)}
+                    className={
+                      compact
+                        ? "text-xs px-2 py-0.5 bg-gray-100 rounded-sm"
+                        : "text-sm px-2 py-1 bg-gray-100 rounded"
+                    }
+                  >
+                    {compactImagesOpen ? "Hide Images" : "Images"}
+                  </button>
+                  {compactImagesOpen && (
+                    <div className={compact ? "mt-1" : "mt-2"}>
+                      <ImageUploader
+                        resetKey={imageResetKey}
+                        compact={compact}
+                        onImagesSelect={handleQuestionImagesSelect}
                       />
-
-                      <div className="space-y-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Images (Multiple)
-                        </label>
-                        <ImageUploader
-                          resetKey={imageResetKey}
-                          onImagesSelect={(files) =>
-                            handleMatchingImagesSelect("left", item.id, files)
-                          }
-                        />
-
-                        <div className="mt-2">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Or paste image URLs:
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="url"
-                              placeholder="https://example.com/image.jpg"
-                              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
-                              onKeyPress={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  handlePastedImageUrl(
-                                    `left-${item.id}`,
-                                    e.target.value,
-                                  );
-                                  e.target.value = "";
-                                }
-                              }}
-                            />
-                          </div>
-                          {pastedImageUrls[`left-${item.id}`]?.map(
-                            (url, urlIndex) => (
-                              <div
-                                key={urlIndex}
-                                className="flex items-center gap-2 mt-2 p-2 bg-gray-100 rounded"
-                              >
-                                <img
-                                  src={url}
-                                  alt=""
-                                  className="w-12 h-12 object-cover rounded"
-                                />
-                                <span className="flex-1 text-xs truncate">
-                                  {url}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRemovePastedUrl(
-                                      `left-${item.id}`,
-                                      urlIndex,
-                                    )
-                                  }
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-3">
-                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase">
-                          Correct Match:
-                        </label>
-                        <select
-                          value={
-                            formData.matchingPairs.correctMatches[item.id] || ""
-                          }
-                          onChange={(e) =>
-                            handleCorrectMatchChange(item.id, e.target.value)
-                          }
-                          className="w-full p-2 border-2 border-purple-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        >
-                          <option value="">Select matching answer</option>
-                          {formData.matchingPairs.rightItems.map(
-                            (rightItem) => (
-                              <option key={rightItem.id} value={rightItem.id}>
-                                {rightItem.id} -{" "}
-                                {rightItem.text.substring(0, 30)}
-                                {rightItem.text.length > 30 ? "..." : ""}
-                              </option>
-                            ),
-                          )}
-                        </select>
-                      </div>
                     </div>
-                  ))}
-
-                  <div className="mt-3 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => addMatchingItem("left")}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
-                    >
-                      <Plus size={16} /> Add Item
-                    </button>
-                  </div>
+                  )}
                 </div>
-
-                <div className="bg-white p-4 rounded-lg shadow-sm border-2 border-pink-300">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-700 text-lg">
-                      Column B (Answers)
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => addMatchingItem("right")}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
-                    >
-                      <Plus size={18} /> Add Item
-                    </button>
-                  </div>
-
-                  {formData.matchingPairs.rightItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="mb-4 p-4 border-2 border-pink-200 rounded-lg bg-pink-50 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="font-bold text-pink-700 bg-white px-3 py-1 rounded-full">
-                          {item.id}
-                        </span>
-                        {formData.matchingPairs.rightItems.length > 2 && (
-                          <button
-                            type="button"
-                            onClick={() => removeMatchingItem("right", index)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-full transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-
-                      <RichTextEditor
-                        label=""
-                        value={item.text}
-                        onChange={(html) =>
-                          handleMatchingItemChange("right", index, "text", html)
-                        }
-                      />
-
-                      <div className="space-y-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Images (Multiple)
-                        </label>
-                        <ImageUploader
-                          resetKey={imageResetKey}
-                          onImagesSelect={(files) =>
-                            handleMatchingImagesSelect("right", item.id, files)
-                          }
-                        />
-
-                        <div className="mt-2">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Or paste image URLs:
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="url"
-                              placeholder="https://example.com/image.jpg"
-                              className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
-                              onKeyPress={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  handlePastedImageUrl(
-                                    `right-${item.id}`,
-                                    e.target.value,
-                                  );
-                                  e.target.value = "";
-                                }
-                              }}
-                            />
-                          </div>
-                          {pastedImageUrls[`right-${item.id}`]?.map(
-                            (url, urlIndex) => (
-                              <div
-                                key={urlIndex}
-                                className="flex items-center gap-2 mt-2 p-2 bg-gray-100 rounded"
-                              >
-                                <img
-                                  src={url}
-                                  alt=""
-                                  className="w-12 h-12 object-cover rounded"
-                                />
-                                <span className="flex-1 text-xs truncate">
-                                  {url}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRemovePastedUrl(
-                                      `right-${item.id}`,
-                                      urlIndex,
-                                    )
-                                  }
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="mt-3 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => addMatchingItem("right")}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
-                    >
-                      <Plus size={16} /> Add Item
-                    </button>
-                  </div>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Question Images (Optional - Multiple)
+                  </label>
+                  <ImageUploader
+                    resetKey={imageResetKey}
+                    onImagesSelect={handleQuestionImagesSelect}
+                  />
+                </>
+              )}
             </div>
-          ) : (
-            <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border border-green-200">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-                <span className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">
-                  2
-                </span>
-                Answer Options
-              </h2>
 
-              {formData.options.map((option, index) => (
-                <div
-                  key={index}
-                  className="mb-4 p-4 border-2 border-green-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+            {formData.questionType === "matching" ? (
+              <div
+                className={
+                  compact
+                    ? "p-2 rounded border mt-2"
+                    : "bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200"
+                }
+              >
+                <h2
+                  className={
+                    compact
+                      ? "text-sm font-semibold mb-2 text-gray-800 flex items-center"
+                      : "text-xl font-semibold mb-4 text-gray-800 flex items-center"
+                  }
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <span className="font-bold text-lg mr-4 bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                        {option.label}
-                      </span>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type={
-                            formData.questionType === "radio"
-                              ? "radio"
-                              : "checkbox"
-                          }
-                          name="correctAnswers"
-                          checked={formData.correctAnswers.includes(
-                            option.label,
-                          )}
-                          onChange={() =>
-                            handleCorrectAnswerChange(option.label)
-                          }
-                          className="mr-2 w-5 h-5 text-green-500 focus:ring-green-500"
-                        />
-                        <span className="font-medium text-green-700">
-                          Mark as Correct Answer
-                        </span>
-                      </label>
-                    </div>
-                    {formData.options.length > 2 && (
+                  <span
+                    className={
+                      compact
+                        ? "bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 text-xs"
+                        : "bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3"
+                    }
+                  >
+                    2
+                  </span>
+                  Matching Items
+                </h2>
+
+                <div
+                  className={
+                    compact
+                      ? "grid grid-cols-1 lg:grid-cols-2 gap-3"
+                      : "grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  }
+                >
+                  <div
+                    className={
+                      compact
+                        ? "bg-white p-2 rounded shadow-sm border"
+                        : "bg-white p-4 rounded-lg shadow-sm border-2 border-purple-300"
+                    }
+                  >
+                    <div
+                      className={
+                        compact
+                          ? "flex items-center justify-between mb-2"
+                          : "flex justify-between items-center mb-4"
+                      }
+                    >
+                      <h3
+                        className={
+                          compact
+                            ? "font-medium text-gray-700 text-sm"
+                            : "font-semibold text-gray-700 text-lg"
+                        }
+                      >
+                        Column A (Questions)
+                      </h3>
                       <button
                         type="button"
-                        onClick={() => removeOption(index)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors flex items-center text-sm"
+                        onClick={() => addMatchingItem("left")}
+                        className={
+                          compact
+                            ? "flex items-center gap-2 px-2 py-1 bg-green-500 text-white rounded-sm"
+                            : "flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                        }
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        Remove
+                        <Plus size={compact ? 14 : 18} />{" "}
+                        {compact ? "Add" : "Add Item"}
                       </button>
-                    )}
+                    </div>
+
+                    {formData.matchingPairs.leftItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="mb-4 p-4 border-2 border-purple-200 rounded-lg bg-purple-50 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="font-bold text-purple-700 bg-white px-3 py-1 rounded-full">
+                            {item.id}
+                          </span>
+                          {formData.matchingPairs.leftItems.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => removeMatchingItem("left", index)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-full transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+
+                        <RichTextEditor
+                          label=""
+                          value={item.text}
+                          onChange={(html) =>
+                            handleMatchingItemChange(
+                              "left",
+                              index,
+                              "text",
+                              html,
+                            )
+                          }
+                        />
+
+                        <div className="space-y-3">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Images (Multiple)
+                          </label>
+                          <ImageUploader
+                            resetKey={imageResetKey}
+                            onImagesSelect={(files) =>
+                              handleMatchingImagesSelect("left", item.id, files)
+                            }
+                          />
+
+                          <div className="mt-2">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Or paste image URLs:
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                type="url"
+                                placeholder="https://example.com/image.jpg"
+                                className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
+                                onKeyPress={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handlePastedImageUrl(
+                                      `left-${item.id}`,
+                                      e.target.value,
+                                    );
+                                    e.target.value = "";
+                                  }
+                                }}
+                              />
+                            </div>
+                            {pastedImageUrls[`left-${item.id}`]?.map(
+                              (url, urlIndex) => (
+                                <div
+                                  key={urlIndex}
+                                  className="flex items-center gap-2 mt-2 p-2 bg-gray-100 rounded"
+                                >
+                                  <img
+                                    src={url}
+                                    alt=""
+                                    className="w-12 h-12 object-cover rounded"
+                                  />
+                                  <span className="flex-1 text-xs truncate">
+                                    {url}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemovePastedUrl(
+                                        `left-${item.id}`,
+                                        urlIndex,
+                                      )
+                                    }
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase">
+                            Correct Match:
+                          </label>
+                          <select
+                            value={
+                              formData.matchingPairs.correctMatches[item.id] ||
+                              ""
+                            }
+                            onChange={(e) =>
+                              handleCorrectMatchChange(item.id, e.target.value)
+                            }
+                            className="w-full p-2 border-2 border-purple-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          >
+                            <option value="">Select matching answer</option>
+                            {formData.matchingPairs.rightItems.map(
+                              (rightItem) => (
+                                <option key={rightItem.id} value={rightItem.id}>
+                                  {rightItem.id} -{" "}
+                                  {rightItem.text.substring(0, 30)}
+                                  {rightItem.text.length > 30 ? "..." : ""}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="mt-3 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("left")}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                      >
+                        <Plus size={16} /> Add Item
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="mb-3">
-                    <RichTextEditor
-                      label=""
-                      value={option.text}
-                      onChange={(html) =>
-                        handleOptionChange(index, "text", html)
-                      }
-                    />
-                  </div>
+                  <div className="bg-white p-4 rounded-lg shadow-sm border-2 border-pink-300">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-semibold text-gray-700 text-lg">
+                        Column B (Answers)
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("right")}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                      >
+                        <Plus size={18} /> Add Item
+                      </button>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Option Images (Optional - Multiple)
-                    </label>
-                    <ImageUploader
-                      resetKey={imageResetKey}
-                      onImagesSelect={(files) =>
-                        handleOptionImagesSelect(index, files)
-                      }
-                    />
+                    {formData.matchingPairs.rightItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="mb-4 p-4 border-2 border-pink-200 rounded-lg bg-pink-50 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="font-bold text-pink-700 bg-white px-3 py-1 rounded-full">
+                            {item.id}
+                          </span>
+                          {formData.matchingPairs.rightItems.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => removeMatchingItem("right", index)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-full transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+
+                        <RichTextEditor
+                          label=""
+                          value={item.text}
+                          onChange={(html) =>
+                            handleMatchingItemChange(
+                              "right",
+                              index,
+                              "text",
+                              html,
+                            )
+                          }
+                        />
+
+                        <div className="space-y-3">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Images (Multiple)
+                          </label>
+                          <ImageUploader
+                            resetKey={imageResetKey}
+                            onImagesSelect={(files) =>
+                              handleMatchingImagesSelect(
+                                "right",
+                                item.id,
+                                files,
+                              )
+                            }
+                          />
+
+                          <div className="mt-2">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Or paste image URLs:
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                type="url"
+                                placeholder="https://example.com/image.jpg"
+                                className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
+                                onKeyPress={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handlePastedImageUrl(
+                                      `right-${item.id}`,
+                                      e.target.value,
+                                    );
+                                    e.target.value = "";
+                                  }
+                                }}
+                              />
+                            </div>
+                            {pastedImageUrls[`right-${item.id}`]?.map(
+                              (url, urlIndex) => (
+                                <div
+                                  key={urlIndex}
+                                  className="flex items-center gap-2 mt-2 p-2 bg-gray-100 rounded"
+                                >
+                                  <img
+                                    src={url}
+                                    alt=""
+                                    className="w-12 h-12 object-cover rounded"
+                                  />
+                                  <span className="flex-1 text-xs truncate">
+                                    {url}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemovePastedUrl(
+                                        `right-${item.id}`,
+                                        urlIndex,
+                                      )
+                                    }
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="mt-3 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("right")}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                      >
+                        <Plus size={16} /> Add Item
+                      </button>
+                    </div>
                   </div>
                 </div>
-              ))}
-
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={addOption}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Add Option
-                </button>
               </div>
-            </div>
-          )}
-
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-lg border border-amber-200">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-              <span className="bg-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">
-                3
-              </span>
-              Additional Details
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Difficulty Level
-                </label>
-                <select
-                  name="difficulty"
-                  value={formData.difficulty}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Marks
-                </label>
-                <input
-                  type="number"
-                  name="marks"
-                  value={formData.marks}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  min="0"
-                  step="0.5"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Negative Marks
-                </label>
-                <input
-                  type="number"
-                  name="negativeMarks"
-                  value={formData.negativeMarks}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  min="0"
-                  step="0.5"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject{" "}
-                  <span className="text-gray-400 text-xs">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  placeholder="e.g., Mathematics"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Topic{" "}
-                  <span className="text-gray-400 text-xs">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  name="topic"
-                  value={formData.topic}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  placeholder="e.g., Algebra"
-                />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags <span className="text-gray-400 text-xs">(Optional)</span> -
-                comma separated
-              </label>
-              <input
-                type="text"
-                value={formData.tags.join(", ")}
-                onChange={(e) => {
-                  const tagsArray = e.target.value
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter((tag) => tag);
-                  setFormData((prev) => ({ ...prev, tags: tagsArray }));
-                }}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                placeholder="e.g., algebra, geometry, math"
-              />
-            </div>
-
-            <div className="mb-4">
-              <RichTextEditor
-                label="Explanation (Optional)"
-                value={formData.explanation}
-                onChange={(html) =>
-                  setFormData((prev) => ({ ...prev, explanation: html }))
+            ) : (
+              <div
+                className={
+                  compact
+                    ? "p-2 rounded border mt-2"
+                    : "bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border border-green-200"
                 }
-              />
-            </div>
-
-            <div className="flex items-center gap-4">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isSample"
-                  checked={formData.isSample}
-                  onChange={handleInputChange}
-                  className="mr-2 w-5 h-5 text-amber-500 focus:ring-amber-500"
-                />
-                <span className="font-medium text-gray-700">
-                  Mark as Sample Question
-                </span>
-              </label>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              >
+                <h2
+                  className={
+                    compact
+                      ? "text-sm font-semibold mb-2 text-gray-800 flex items-center"
+                      : "text-xl font-semibold mb-4 text-gray-800 flex items-center"
+                  }
                 >
-                  <option value="draft">Draft</option>
-                  <option value="publish">Publish</option>
-                </select>
-              </div>
-            </div>
-          </div>
+                  <span
+                    className={
+                      compact
+                        ? "bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 text-xs"
+                        : "bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3"
+                    }
+                  >
+                    2
+                  </span>
+                  Answer Options
+                </h2>
 
-          {/* Quick-add toolbar for modal: keeps add buttons visible at bottom so
-              user doesn't need to scroll to the top to add options/columns */}
-          {(isModal || formData.questionType === "matching") && (
-            <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur px-6 py-3 border-t flex items-center justify-between gap-4 z-30">
-              <div className="flex items-center gap-3">
-                {formData.questionType !== "matching" ? (
+                {formData.options.map((option, index) => (
+                  <div
+                    key={index}
+                    className={
+                      compact
+                        ? "mb-2 p-2 border rounded bg-white"
+                        : "mb-4 p-4 border-2 border-green-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+                    }
+                  >
+                    <div
+                      className={
+                        compact
+                          ? "flex items-center justify-between mb-2"
+                          : "flex items-center justify-between mb-3"
+                      }
+                    >
+                      <div className="flex items-center">
+                        <span
+                          className={
+                            compact
+                              ? "font-bold text-sm mr-3 bg-green-100 text-green-700 px-2 py-0.5 rounded-full"
+                              : "font-bold text-lg mr-4 bg-green-100 text-green-700 px-3 py-1 rounded-full"
+                          }
+                        >
+                          {option.label}
+                        </span>
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type={
+                              formData.questionType === "radio"
+                                ? "radio"
+                                : "checkbox"
+                            }
+                            name="correctAnswers"
+                            checked={formData.correctAnswers.includes(
+                              option.label,
+                            )}
+                            onChange={() =>
+                              handleCorrectAnswerChange(option.label)
+                            }
+                            className={
+                              compact
+                                ? "mr-2 w-4 h-4 text-green-500"
+                                : "mr-2 w-5 h-5 text-green-500 focus:ring-green-500"
+                            }
+                          />
+                          <span
+                            className={
+                              compact
+                                ? "font-medium text-green-700 text-xs"
+                                : "font-medium text-green-700"
+                            }
+                          >
+                            Mark as Correct Answer
+                          </span>
+                        </label>
+                      </div>
+                      {formData.options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeOption(index)}
+                          className={
+                            compact
+                              ? "bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-sm transition-colors flex items-center text-xs"
+                              : "bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors flex items-center text-sm"
+                          }
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className={
+                              compact ? "h-3 w-3 mr-1" : "h-4 w-4 mr-1"
+                            }
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          <span className={compact ? "text-xs" : ""}>
+                            Remove
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className={compact ? "mb-2" : "mb-3"}>
+                      <RichTextEditor
+                        label=""
+                        compact={compact}
+                        value={option.text}
+                        onChange={(html) =>
+                          handleOptionChange(index, "text", html)
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className={
+                          compact
+                            ? "block text-xs font-medium text-gray-700 mb-1"
+                            : "block text-sm font-medium text-gray-700 mb-2"
+                        }
+                      >
+                        Option Images (Optional - Multiple)
+                      </label>
+                      <ImageUploader
+                        resetKey={imageResetKey}
+                        compact={compact}
+                        onImagesSelect={(files) =>
+                          handleOptionImagesSelect(index, files)
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <div className={compact ? "mt-2" : "mt-4"}>
                   <button
                     type="button"
                     onClick={addOption}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
-                    aria-label="Add option"
+                    className={
+                      compact
+                        ? "bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-sm transition-colors flex items-center text-xs font-medium"
+                        : "bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                    }
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 mr-2"
+                      className={compact ? "h-4 w-4 mr-1" : "h-5 w-5 mr-2"}
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -1250,64 +1229,485 @@ const QuestionForm = ({
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    Add Option
+                    <span className={compact ? "text-xs" : ""}>Add Option</span>
                   </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => addMatchingItem("left")}
-                      className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
-                      aria-label="Add item to Column A"
-                    >
-                      Add Column A
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => addMatchingItem("right")}
-                      className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
-                      aria-label="Add item to Column B"
-                    >
-                      Add Column B
-                    </button>
-                  </div>
-                )}
+                </div>
               </div>
-              <div className="text-sm text-gray-600">Quick actions</div>
-            </div>
-          )}
+            )}
 
-          <div className="flex justify-end gap-4 pt-6 border-t">
+            <div
+              className={
+                compact
+                  ? "p-2 rounded border mt-2"
+                  : "bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-lg border border-amber-200"
+              }
+            >
+              <h2
+                className={
+                  compact
+                    ? "text-sm font-semibold mb-2 text-gray-800 flex items-center"
+                    : "text-xl font-semibold mb-4 text-gray-800 flex items-center"
+                }
+              >
+                <span
+                  className={
+                    compact
+                      ? "bg-amber-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 text-xs"
+                      : "bg-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3"
+                  }
+                >
+                  3
+                </span>
+                Additional Details
+              </h2>
+
+              <div
+                className={
+                  compact
+                    ? "grid grid-cols-1 md:grid-cols-3 gap-2 mb-2"
+                    : "grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"
+                }
+              >
+                <div>
+                  <label
+                    className={
+                      compact
+                        ? "block text-xs font-medium text-gray-700 mb-1"
+                        : "block text-sm font-medium text-gray-700 mb-1"
+                    }
+                  >
+                    Difficulty Level
+                  </label>
+                  <select
+                    name="difficulty"
+                    value={formData.difficulty}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs"
+                        : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    }
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    className={
+                      compact
+                        ? "block text-xs font-medium text-gray-700 mb-1"
+                        : "block text-sm font-medium text-gray-700 mb-1"
+                    }
+                  >
+                    Marks
+                  </label>
+                  <input
+                    type="number"
+                    name="marks"
+                    value={formData.marks}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs"
+                        : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    }
+                    min="0"
+                    step="0.5"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className={
+                      compact
+                        ? "block text-xs font-medium text-gray-700 mb-1"
+                        : "block text-sm font-medium text-gray-700 mb-1"
+                    }
+                  >
+                    Negative Marks
+                  </label>
+                  <input
+                    type="number"
+                    name="negativeMarks"
+                    value={formData.negativeMarks}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs"
+                        : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    }
+                    min="0"
+                    step="0.5"
+                  />
+                </div>
+              </div>
+
+              <div
+                className={
+                  compact
+                    ? "grid grid-cols-1 md:grid-cols-2 gap-2 mb-2"
+                    : "grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"
+                }
+              >
+                <div>
+                  <label
+                    className={
+                      compact
+                        ? "block text-xs font-medium text-gray-700 mb-1"
+                        : "block text-sm font-medium text-gray-700 mb-1"
+                    }
+                  >
+                    Subject{" "}
+                    <span
+                      className={
+                        compact
+                          ? "text-gray-400 text-xxs"
+                          : "text-gray-400 text-xs"
+                      }
+                    >
+                      (Optional)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs"
+                        : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    }
+                    placeholder="e.g., Mathematics"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className={
+                      compact
+                        ? "block text-xs font-medium text-gray-700 mb-1"
+                        : "block text-sm font-medium text-gray-700 mb-1"
+                    }
+                  >
+                    Topic{" "}
+                    <span
+                      className={
+                        compact
+                          ? "text-gray-400 text-xxs"
+                          : "text-gray-400 text-xs"
+                      }
+                    >
+                      (Optional)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    name="topic"
+                    value={formData.topic}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs"
+                        : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    }
+                    placeholder="e.g., Algebra"
+                  />
+                </div>
+              </div>
+
+              <div className={compact ? "mb-2" : "mb-4"}>
+                <label
+                  className={
+                    compact
+                      ? "block text-xs font-medium text-gray-700 mb-1"
+                      : "block text-sm font-medium text-gray-700 mb-1"
+                  }
+                >
+                  Tags{" "}
+                  <span
+                    className={
+                      compact
+                        ? "text-gray-400 text-xxs"
+                        : "text-gray-400 text-xs"
+                    }
+                  >
+                    (Optional)
+                  </span>{" "}
+                  - comma separated
+                </label>
+                <input
+                  type="text"
+                  value={formData.tags.join(", ")}
+                  onChange={(e) => {
+                    const tagsArray = e.target.value
+                      .split(",")
+                      .map((tag) => tag.trim())
+                      .filter((tag) => tag);
+                    setFormData((prev) => ({ ...prev, tags: tagsArray }));
+                  }}
+                  className={
+                    compact
+                      ? "w-full p-1.5 border border-gray-300 rounded-sm text-xs"
+                      : "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  }
+                  placeholder="e.g., algebra, geometry, math"
+                />
+              </div>
+
+              <div className={compact ? "mb-2" : "mb-4"}>
+                <RichTextEditor
+                  label={compact ? "" : "Explanation (Optional)"}
+                  compact={compact}
+                  value={formData.explanation}
+                  onChange={(html) =>
+                    setFormData((prev) => ({ ...prev, explanation: html }))
+                  }
+                />
+              </div>
+
+              <div
+                className={
+                  compact
+                    ? "flex items-center gap-2"
+                    : "flex items-center gap-4"
+                }
+              >
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isSample"
+                    checked={formData.isSample}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "mr-2 w-4 h-4 text-amber-500"
+                        : "mr-2 w-5 h-5 text-amber-500 focus:ring-amber-500"
+                    }
+                  />
+                  <span
+                    className={
+                      compact
+                        ? "font-medium text-gray-700 text-xs"
+                        : "font-medium text-gray-700"
+                    }
+                  >
+                    Mark as Sample Question
+                  </span>
+                </label>
+
+                <div>
+                  <label
+                    className={
+                      compact
+                        ? "block text-xs font-medium text-gray-700 mb-1"
+                        : "block text-sm font-medium text-gray-700 mb-1"
+                    }
+                  >
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className={
+                      compact
+                        ? "p-1.5 border border-gray-300 rounded-sm text-xs"
+                        : "p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    }
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="publish">Publish</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick-add toolbar for modal: keeps add buttons visible at bottom so
+              user doesn't need to scroll to the top to add options/columns */}
+          {(isModal || formData.questionType === "matching") &&
+            (compact ? (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {formData.questionType !== "matching" ? (
+                    <button
+                      type="button"
+                      onClick={addOption}
+                      className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-sm transition-colors flex items-center text-xs font-medium"
+                      aria-label="Add option"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Add
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("left")}
+                        className="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded-sm text-xs"
+                        aria-label="Add item to Column A"
+                      >
+                        A+
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("right")}
+                        className="bg-pink-500 hover:bg-pink-600 text-white px-2 py-1 rounded-sm text-xs"
+                        aria-label="Add item to Column B"
+                      >
+                        B+
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-600">Quick</div>
+              </div>
+            ) : (
+              <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur px-6 py-3 border-t flex items-center justify-between gap-4 z-30">
+                <div className="flex items-center gap-3">
+                  {formData.questionType !== "matching" ? (
+                    <button
+                      type="button"
+                      onClick={addOption}
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                      aria-label="Add option"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Add Option
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("left")}
+                        className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                        aria-label="Add item to Column A"
+                      >
+                        Add Column A
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => addMatchingItem("right")}
+                        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center text-sm font-medium"
+                        aria-label="Add item to Column B"
+                      >
+                        Add Column B
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="text-sm text-gray-600">Quick actions</div>
+              </div>
+            ))}
+
+          <div
+            className={`flex justify-end gap-4 pt-6 border-t ${compact ? "items-center" : ""}`}
+          >
             {!isModal && (
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className={
+                  compact
+                    ? "px-3 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors text-xs"
+                    : "px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                }
               >
-                Cancel
+                {compact ? "Cancel" : "Cancel"}
               </button>
             )}
             {isModal && !isEditing && (
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className={
+                  compact
+                    ? "px-3 py-2 border border-gray-300 text-gray-700 rounded-sm hover:bg-gray-50 transition-colors text-xs"
+                    : "px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                }
               >
-                Clear Form
+                {compact ? "Clear" : "Clear Form"}
+              </button>
+            )}
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => submitHandler(true)}
+                className={
+                  compact
+                    ? "px-3 py-2 bg-green-500 text-white rounded-sm hover:bg-green-600 transition-colors text-xs"
+                    : "px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+                }
+              >
+                {compact ? "Save & Add" : "Save & Add Another"}
               </button>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className={
+                compact
+                  ? "px-3 py-2 bg-blue-500 text-white rounded-sm hover:bg-blue-600 transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  : "px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              }
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {isEditing ? "Updating..." : "Creating..."}
+                  <div
+                    className={
+                      compact
+                        ? "w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                        : "w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+                    }
+                  ></div>
+                  {isEditing
+                    ? compact
+                      ? "Updating"
+                      : "Updating..."
+                    : compact
+                      ? "Saving"
+                      : "Creating..."}
                 </>
               ) : (
-                <>{isEditing ? "Update Question" : "Save & Continue"}</>
+                <>
+                  {isEditing
+                    ? compact
+                      ? "Update"
+                      : "Update Question"
+                    : compact
+                      ? "Save"
+                      : "Save & Continue"}
+                </>
               )}
             </button>
           </div>

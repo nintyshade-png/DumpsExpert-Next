@@ -38,7 +38,6 @@ const questionSchema = new mongoose.Schema(
       ref: "Exam",
       required: true,
     },
-    questionCode: { type: String, required: true },
     questionText: { type: String, required: true },
 
     // 🆕 Multiple question images
@@ -99,8 +98,7 @@ const questionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// ✅ Prevent duplicate question codes under same exam
-questionSchema.index({ examId: 1, questionCode: 1 }, { unique: true });
+// Note: `questionCode` removed. If a DB index exists, drop it manually in the database.
 
 // ✅ Safe export for Next.js
 const Question =

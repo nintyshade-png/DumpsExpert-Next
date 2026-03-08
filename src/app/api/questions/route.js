@@ -29,7 +29,6 @@ export async function POST(request) {
     const questionData = {
       examId,
       questionText: data.questionText,
-      questionCode: data.questionCode,
       questionType,
       difficulty: data.difficulty,
       marks: Number(data.marks),
@@ -136,13 +135,7 @@ export async function POST(request) {
 
     console.log("✅ Final questionData before save:", questionData);
 
-    // If questionCode is empty, generate a stable unique code to avoid
-    // creating multiple empty-string duplicates under same exam.
-    if (!questionData.questionCode || questionData.questionCode.trim() === "") {
-      questionData.questionCode = `Q_${Date.now().toString(36)}`;
-    } else {
-      questionData.questionCode = String(questionData.questionCode).trim();
-    }
+    // `questionCode` removed from payload; backend will not set or require it.
 
     try {
       const newQuestion = await Question.create(questionData);
@@ -157,8 +150,7 @@ export async function POST(request) {
         return NextResponse.json(
           {
             success: false,
-            message:
-              "Duplicate question code for this exam. Please use a different Question Code.",
+            message: "Duplicate key error. Please ensure unique fields.",
           },
           { status: 409 },
         );
@@ -187,7 +179,6 @@ export async function PUT(request, { params }) {
 
     const updateData = {
       questionText: data.questionText,
-      questionCode: data.questionCode,
       questionType,
       difficulty: data.difficulty,
       marks: Number(data.marks),
@@ -306,8 +297,7 @@ export async function PUT(request, { params }) {
         return NextResponse.json(
           {
             success: false,
-            message:
-              "Duplicate question code for this exam. Please use a different Question Code.",
+            message: "Duplicate key error. Please ensure unique fields.",
           },
           { status: 409 },
         );

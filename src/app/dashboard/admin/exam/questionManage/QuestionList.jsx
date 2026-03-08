@@ -32,6 +32,9 @@ const QuestionList = ({
   const router = useRouter();
   // State to manage questions list
   const [questions, setQuestions] = useState(initialQuestions || []);
+  // Selected question IDs for bulk actions
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
   // State to manage question preview modal
   const [previewQuestion, setPreviewQuestion] = useState(null);
   // State to manage add/edit modal
@@ -163,6 +166,38 @@ const QuestionList = ({
           </button>
         )}
       </div>
+      <div className="flex items-center gap-3">
+        {selectedIds.length > 0 && (
+          <button
+            onClick={async () => {
+              if (!window.confirm(`Delete ${selectedIds.length} selected?`))
+                return;
+              setBulkLoading(true);
+              try {
+                await Promise.all(
+                  selectedIds.map((id) => api.delete(`/api/questions/${id}`)),
+                );
+                setQuestions((prev) =>
+                  prev.filter((q) => !selectedIds.includes(q._id)),
+                );
+                setSelectedIds([]);
+                alert("Selected questions deleted");
+              } catch (err) {
+                console.error("Bulk delete failed", err);
+                alert("Failed to delete selected questions");
+              } finally {
+                setBulkLoading(false);
+              }
+            }}
+            disabled={bulkLoading}
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+          >
+            {bulkLoading
+              ? "Deleting..."
+              : `Delete Selected (${selectedIds.length})`}
+          </button>
+        )}
+      </div>
 
       {/* Table to display questions */}
       <div className="overflow-x-auto">
@@ -170,6 +205,20 @@ const QuestionList = ({
           {/* Table header */}
           <thead>
             <tr className="bg-gray-200 text-gray-700 text-sm">
+              <th className="p-3 text-left border-b">
+                <input
+                  type="checkbox"
+                  checked={
+                    filteredQuestions.length > 0 &&
+                    selectedIds.length === filteredQuestions.length
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked)
+                      setSelectedIds(filteredQuestions.map((q) => q._id));
+                    else setSelectedIds([]);
+                  }}
+                />
+              </th>
               <th className="p-3 text-left border-b">Sn.No</th>
               <th className="p-3 text-left border-b">Question Code</th>
               <th className="p-3 text-left border-b">Question</th>
@@ -192,6 +241,18 @@ const QuestionList = ({
                   key={q._id}
                   className="hover:bg-gray-50 border-b transition duration-300"
                 >
+                  <td className="p-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(q._id)}
+                      onChange={(e) => {
+                        if (e.target.checked)
+                          setSelectedIds((s) => [...s, q._id]);
+                        else
+                          setSelectedIds((s) => s.filter((id) => id !== q._id));
+                      }}
+                    />
+                  </td>
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3">{q.questionCode || "N/A"}</td>
                   <td className="p-3">

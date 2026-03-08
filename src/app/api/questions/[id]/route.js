@@ -1,30 +1,30 @@
 import { connectMongoDB } from "@/lib/mongo";
 import Question from "@/models/questionSchema";
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 // ✅ Get a single question by ID for editing
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    
+
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Question ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     await connectMongoDB();
-    
+
     const question = await Question.findById(id);
-    
+
     if (!question) {
       return NextResponse.json(
         { success: false, message: "Question not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
-    
+
     return NextResponse.json({
       success: true,
       data: question,
@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
     console.error("Error fetching question:", error);
     return NextResponse.json(
       { success: false, message: "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -45,7 +45,7 @@ export async function PUT(request, { params }) {
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Question ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,13 +59,12 @@ export async function PUT(request, { params }) {
     if (!existingQuestion) {
       return NextResponse.json(
         { success: false, message: "Question not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const updateData = {
       questionText: data.questionText,
-      questionCode: data.questionCode,
       questionType,
       difficulty: data.difficulty,
       marks: Number(data.marks),
@@ -94,13 +93,14 @@ export async function PUT(request, { params }) {
           if (imageFile instanceof Blob && imageFile.size > 0) {
             item.image = await uploadImage(imageFile);
           } else {
-            const existingItem = existingQuestion.matchingPairs?.leftItems?.[index];
+            const existingItem =
+              existingQuestion.matchingPairs?.leftItems?.[index];
             if (existingItem && existingItem.image) {
               item.image = existingItem.image;
             }
           }
           return item;
-        })
+        }),
       );
 
       const processedRightItems = await Promise.all(
@@ -109,13 +109,14 @@ export async function PUT(request, { params }) {
           if (imageFile instanceof Blob && imageFile.size > 0) {
             item.image = await uploadImage(imageFile);
           } else {
-            const existingItem = existingQuestion.matchingPairs?.rightItems?.[index];
+            const existingItem =
+              existingQuestion.matchingPairs?.rightItems?.[index];
             if (existingItem && existingItem.image) {
               item.image = existingItem.image;
             }
           }
           return item;
-        })
+        }),
       );
 
       updateData.matchingPairs = {
@@ -139,7 +140,7 @@ export async function PUT(request, { params }) {
             }
           }
           return option;
-        })
+        }),
       );
 
       updateData.options = processedOptions;
@@ -151,30 +152,31 @@ export async function PUT(request, { params }) {
       runValidators: true,
     });
 
-    return NextResponse.json({ success: true, data: updatedQuestion }, { status: 200 });
+    return NextResponse.json(
+      { success: true, data: updatedQuestion },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("❌ Error updating question:", error);
     return NextResponse.json(
       { success: false, message: "Failed to update question" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
 
 // ✅ Delete a question by ID
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
-    
+
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Question ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     await connectMongoDB();
 
     const deletedQuestion = await Question.findByIdAndDelete(id);
@@ -182,19 +184,19 @@ export async function DELETE(request, { params }) {
     if (!deletedQuestion) {
       return NextResponse.json(
         { success: false, message: "Question not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
       { success: true, message: "Question deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { success: false, message: "Failed to delete question" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -212,11 +214,11 @@ async function uploadImage(imageFile) {
 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { resource_type: 'image' },
+      { resource_type: "image" },
       (error, result) => {
         if (error) reject(error);
         else resolve(result.secure_url);
-      }
+      },
     );
     stream.end(buffer);
   });
