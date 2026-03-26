@@ -51,13 +51,21 @@ export default function SearchPage() {
               "No description available."}
           </p>
           <div className="mt-4">
-            <p className="text-orange-500 font-bold">
-              ₹{product.dumpsPriceInr?.trim() || "N/A"}
-            </p>
-            {product.dumpsMrpInr && (
-              <p className="line-through text-sm text-gray-400">
-                ₹{product.dumpsMrpInr}
+            {product.showWpConnect ? (
+              <p className="text-blue-600 font-bold text-sm">
+                Contact for Best Price
               </p>
+            ) : (
+              <>
+                <p className="text-orange-500 font-bold">
+                  ₹{product.dumpsPriceInr?.trim() || "N/A"}
+                </p>
+                {product.dumpsMrpInr && (
+                  <p className="line-through text-sm text-gray-400">
+                    ₹{product.dumpsMrpInr}
+                  </p>
+                )}
+              </>
             )}
           </div>
           <span className="mt-4 bg-orange-500 text-white text-center font-medium py-2 px-4 rounded-lg hover:bg-orange-600 transition">

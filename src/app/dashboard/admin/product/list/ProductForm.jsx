@@ -43,6 +43,8 @@ const ProductForm = ({ mode }) => {
     passingScore: "",
     duration: "",
     examLastUpdated: Date.now(),
+    // WhatsApp Connect toggle
+    showWpConnect: false,
   });
 
   const [existingFiles, setExistingFiles] = useState({
@@ -107,7 +109,13 @@ const ProductForm = ({ mode }) => {
     }
   }, [mode, id]);
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+
+    // Handle boolean toggles
+    if (type === "checkbox") {
+      setForm((prev) => ({ ...prev, [name]: checked }));
+      return;
+    }
 
     // Auto-convert slug: spaces to hyphens, uppercase to lowercase
     if (name === "slug") {
@@ -496,6 +504,35 @@ const ProductForm = ({ mode }) => {
               <option value="edit">Edit</option>
               <option value="review">Review</option>
             </select>
+          </div>
+        </div>
+
+        {/* WhatsApp Connect Toggle */}
+        <div className="border rounded-lg p-4 bg-green-50 border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="block font-semibold text-gray-800 text-sm">
+                Show WhatsApp Connect Button
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                When ON, the price will be <strong>hidden</strong> and a green
+                &quot;Inquire on WhatsApp&quot; button will appear everywhere
+                this product is displayed.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer ml-4 flex-shrink-0">
+              <input
+                type="checkbox"
+                name="showWpConnect"
+                checked={!!form.showWpConnect}
+                onChange={handleChange}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              <span className="ml-2 text-sm font-medium text-gray-700">
+                {form.showWpConnect ? "ON" : "OFF"}
+              </span>
+            </label>
           </div>
         </div>
 

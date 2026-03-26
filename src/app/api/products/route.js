@@ -166,6 +166,7 @@ export async function GET(req) {
           dumpsPriceUsd: 1,
           dumpsMrpInr: 1,
           dumpsMrpUsd: 1,
+          showWpConnect: 1,
         })
         .lean();
 
@@ -211,6 +212,10 @@ export async function POST(req) {
     const uploads = await handleFileUploads(data);
 
     const productData = { ...data, ...uploads, faqs: data.faqs || [] };
+    // Coerce showWpConnect string → boolean
+    if ("showWpConnect" in productData) {
+      productData.showWpConnect = productData.showWpConnect === true || productData.showWpConnect === "true";
+    }
 
     console.log("\n📝 Creating product with data...");
     const newProduct = new Product(productData);
@@ -263,6 +268,10 @@ export async function PUT(req) {
 
     const updateData = { ...data, ...uploads, faqs: data.faqs || [] };
     delete updateData._id;
+    // Coerce showWpConnect string → boolean
+    if ("showWpConnect" in updateData) {
+      updateData.showWpConnect = updateData.showWpConnect === true || updateData.showWpConnect === "true";
+    }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
       new: true,

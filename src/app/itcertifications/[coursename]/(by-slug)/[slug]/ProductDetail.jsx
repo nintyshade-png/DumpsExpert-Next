@@ -719,8 +719,29 @@ export default function ProductDetailsPage() {
             </div>
           )}
 
-          {/* Pricing Sections - UPDATED for Mobile Responsiveness */}
+          {/* Pricing Sections - UPDATED for Mobile Responsiveness and WhatsApp Connect */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {product.showWpConnect ? (
+              <div className="px-2 sm:px-4 lg:px-6 py-4 sm:py-5 lg:py-6 text-center">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                  Interested in this certification?
+                </h3>
+                <p className="text-sm text-gray-500 mb-5">
+                  Contact us directly on WhatsApp to get the best corporate pricing and instant access.
+                </p>
+                <a
+                  href={`https://wa.me/9891355956?text=Hi%2C%20I'm%20interested%20in%20${encodeURIComponent(product.title || product.sapExamCode)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full max-w-md mx-auto px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm sm:text-base rounded-lg shadow-md transition-all transform hover:-translate-y-0.5"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  Inquire on WhatsApp
+                </a>
+              </div>
+            ) : (
             <div className="divide-y divide-gray-200">
               {/* Online Exam Questions */}
               {hasOnlineExam && !isLoadingExams && (
@@ -800,107 +821,114 @@ export default function ProductDetailsPage() {
                         (${pdfPrices.priceUsd || "67.55"})
                       </span>
                       <span className="line-through text-gray-500">
-                        ₹{pdfPrices.mrpInr || "7000"}
+                        ₹{pdfPrices.mrpInr || "8000"}
                       </span>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 lg:ml-auto w-full lg:w-auto">
-                      {product.samplePdfUrl && (
-                        <button
-                          onClick={() =>
-                            handleDownload(
-                              product.samplePdfUrl,
-                              `${product.title}-Sample.pdf`,
-                            )
-                          }
-                          className="flex-1 min-w-[180px] lg:min-w-[200px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-5 py-1.5 sm:py-2 rounded bg-slate-700 hover:bg-slate-800 text-white font-medium text-[10px] sm:text-xs uppercase transition-colors whitespace-nowrap text-center"
-                        >
-                          <FaDownload size={14} className="sm:w-4 sm:h-4" />
-                          DOWNLOAD SAMPLE
-                        </button>
-                      )}
+                      <button
+                        onClick={() =>
+                          productAvailable
+                            ? handleDownload(
+                                product.samplePdfUrl,
+                                "sample.pdf",
+                              )
+                            : toast.error("Sample PDF not available")
+                        }
+                        className="flex-1 min-w-[180px] lg:min-w-[200px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-5 py-1.5 sm:py-2 rounded bg-slate-700 hover:bg-slate-800 text-white font-medium text-[10px] sm:text-xs uppercase transition-colors whitespace-nowrap text-center"
+                        disabled={!productAvailable}
+                        style={{ maxWidth: "100%" }}
+                      >
+                        <FaDownload size={14} className="sm:w-4 sm:h-4 w-6" />
+                        DOWNLOAD SAMPLE
+                      </button>
                       <button
                         onClick={() => handleAddToCart("regular")}
-                        disabled={!productAvailable}
-                        className={`flex-1 min-w-[180px] lg:min-w-[200px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-5 py-1.5 sm:py-2 rounded text-[10px] sm:text-xs uppercase transition-colors whitespace-nowrap font-bold text-center ${
-                          productAvailable
-                            ? "bg-[#FA8B31] hover:bg-[#e87b21] text-gray-900 cursor-pointer"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
-                        title={
+                        className={`flex-1 min-w-[180px] lg:min-w-[200px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-5 py-1.5 sm:py-2 bg-[#FA8B31] text-gray-900 font-bold text-[10px] sm:text-xs uppercase rounded transition-colors whitespace-nowrap text-center ${
                           !productAvailable
-                            ? "Product unavailable - PDF not found"
-                            : "Add to cart"
-                        }
+                            ? "hover:bg-[#FA8B31] opacity-70 cursor-not-allowed"
+                            : "hover:bg-[#e87b21]"
+                        }`}
+                        disabled={!productAvailable}
+                        style={{ maxWidth: "100%" }}
                       >
                         <FaShoppingCart size={14} className="sm:w-4 sm:h-4" />
-                        {productAvailable ? "ADD TO CART" : "UNAVAILABLE"}
+                        ADD TO CART
                       </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* PDF + Online Exam */}
-              {hasOnlineExam &&
-                comboPrices &&
-                (comboPrices.priceInr || comboPrices.priceUsd) && (
-                  <div
-                    className={`px-2 sm:px-4 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 ${
-                      !productAvailable ? "bg-gray-50 opacity-70" : ""
-                    }`}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-0">
-                      {/* Product Name */}
-                      <div className="lg:w-64 lg:flex-shrink-0">
-                        <h3 className="text-xs sm:text-sm lg:text-[15px] font-normal text-gray-900">
-                          PDF + Online Exam
-                        </h3>
-                        {!productAvailable && (
-                          <span className="text-[9px] sm:text-[10px] text-red-600">
-                            (Currently Unavailable)
+              {/* Special Combo */}
+              {comboPrices && (comboPrices.priceInr || comboPrices.priceUsd) && (
+                <div
+                  className={`px-2 sm:px-4 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 bg-gradient-to-r from-orange-50 to-white ${
+                    !productAvailable ? "opacity-70" : ""
+                  }`}
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-0">
+                    {/* Product Name & Badge */}
+                    <div className="lg:w-64 lg:flex-shrink-0 flex items-center gap-2">
+                      <h3 className="text-xs sm:text-sm lg:text-[15px] font-bold text-gray-900">
+                        Special Combo Package
+                      </h3>
+                      <span className="bg-orange-500 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
+                        BEST VALUE
+                      </span>
+                    </div>
+
+                    {/* Pricing Display */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 lg:mr-auto">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base sm:text-lg lg:text-xl font-bold text-orange-600">
+                          ₹{comboPrices.priceInr}
+                        </span>
+                        <span className="text-sm font-semibold text-gray-600">
+                          (${comboPrices.priceUsd})
+                        </span>
+                        {(comboPrices.mrpInr > comboPrices.priceInr ||
+                          comboPrices.mrpUsd > comboPrices.priceUsd) && (
+                          <span className="text-xs text-gray-400 line-through ml-1">
+                            ₹{comboPrices.mrpInr}
                           </span>
                         )}
                       </div>
+                      
+                      {/* Discount Badge */}
+                      {(comboPrices.mrpInr > comboPrices.priceInr ||
+                        comboPrices.mrpUsd > comboPrices.priceUsd) && (
+                        <div className="inline-flex items-center text-[10px] sm:text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 w-fit">
+                          Save {calculateDiscount(comboPrices.mrpInr, comboPrices.priceInr)}% Off!
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Pricing */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm lg:text-[15px] lg:mr-8">
-                        <span className="text-orange-500">
-                          ₹{comboPrices.priceInr || "6998"},
-                        </span>
-                        <span className="text-gray-600">
-                          (${comboPrices.priceUsd || "94.57"})
-                        </span>
-                        <span className="line-through text-gray-500">
-                          ₹{comboPrices.mrpInr || "8498"}
-                        </span>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 lg:ml-auto w-full lg:w-auto">
-                        <button
-                          onClick={() => handleAddToCart("combo")}
-                          disabled={!productAvailable}
-                          className={`flex-1 min-w-[180px] lg:min-w-[200px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-5 py-1.5 sm:py-2 rounded text-[10px] sm:text-xs uppercase transition-colors whitespace-nowrap font-bold text-center ${
-                            productAvailable
-                              ? "bg-[#FA8B31] hover:bg-[#e87b21] text-gray-900 cursor-pointer"
-                              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          }`}
-                          title={
-                            !productAvailable
-                              ? "Product unavailable - PDF not found"
-                              : "Add to cart"
-                          }
-                        >
-                          <FaShoppingCart size={14} className="sm:w-4 sm:h-4" />
-                          {productAvailable ? "ADD TO CART" : "UNAVAILABLE"}
-                        </button>
-                      </div>
+                    {/* Action Button */}
+                    <div className="flex mt-2 lg:mt-0 lg:ml-auto w-full lg:w-auto">
+                      <button
+                        onClick={() => handleAddToCart("combo")}
+                        className={`w-full lg:w-auto min-w-[200px] flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm uppercase rounded shadow-md transition-all sm:hover:shadow-lg sm:hover:-translate-y-0.5 ${
+                          !productAvailable
+                            ? "opacity-70 cursor-not-allowed sm:hover:translate-y-0 sm:hover:shadow-md"
+                            : ""
+                        }`}
+                        disabled={!productAvailable}
+                      >
+                        <FaShoppingCart size={16} className="sm:w-5 sm:h-5" />
+                        BUY COMBO NOW
+                      </button>
                     </div>
                   </div>
-                )}
+                  {/* Combo Description */}
+                  <p className="text-[10px] sm:text-xs text-gray-600 mt-2 ml-1">
+                    Get both PDF + Online practice exam engine in one complete package.
+                  </p>
+                </div>
+              )}
             </div>
+            )}
           </div>
 
           {/* Description */}

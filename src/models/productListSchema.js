@@ -60,6 +60,9 @@ const productListSchema = new mongoose.Schema(
       default: [],
     },
 
+    // WhatsApp Connect toggle — hides price and shows WP inquiry button sitewide
+    showWpConnect: { type: Boolean, default: false },
+
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserInfo",

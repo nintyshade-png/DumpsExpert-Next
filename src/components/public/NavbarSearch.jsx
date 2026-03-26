@@ -82,25 +82,35 @@ export default function NavbarSearch({ hideOnLarge = false }) {
               "Comprehensive exam preparation material with real practice questions."}
           </p>
           <div className="border-t pt-3 mt-auto">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-lg font-bold text-orange-500">
-                ₹{product.dumpsPriceInr?.trim() || "N/A"}
-              </span>
-              <span className="text-sm font-semibold text-orange-500">
-                ${product.dumpsPriceUsd?.trim() || "N/A"}
-              </span>
-            </div>
-            {product.dumpsMrpInr &&
-              product.dumpsMrpInr > product.dumpsPriceInr && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="line-through text-gray-400">
-                    ₹{product.dumpsMrpInr}
+            {product.showWpConnect ? (
+              <div className="flex items-center justify-center mb-1">
+                <span className="text-sm font-bold text-blue-600">
+                  Contact for Best Price
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-lg font-bold text-orange-500">
+                    ₹{product.dumpsPriceInr?.trim() || "N/A"}
                   </span>
-                  <span className="line-through text-gray-400">
-                    ${product.dumpsMrpUsd}
+                  <span className="text-sm font-semibold text-orange-500">
+                    ${product.dumpsPriceUsd?.trim() || "N/A"}
                   </span>
                 </div>
-              )}
+                {product.dumpsMrpInr &&
+                  product.dumpsMrpInr > product.dumpsPriceInr && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="line-through text-gray-400">
+                        ₹{product.dumpsMrpInr}
+                      </span>
+                      <span className="line-through text-gray-400">
+                        ${product.dumpsMrpUsd}
+                      </span>
+                    </div>
+                  )}
+              </>
+            )}
           </div>
           <button className="mt-3 w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center font-semibold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md group-hover:shadow-lg text-sm">
             View Details →
