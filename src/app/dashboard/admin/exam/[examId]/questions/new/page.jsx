@@ -1,3 +1,5 @@
+"use client";
+
 import QuestionForm from "../../../questionManage/QuestionForm";
 import { useParams } from "next/navigation";
 
