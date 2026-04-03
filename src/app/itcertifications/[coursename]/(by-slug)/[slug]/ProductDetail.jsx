@@ -730,7 +730,7 @@ export default function ProductDetailsPage() {
                   Contact us directly on WhatsApp to get the best corporate pricing and instant access.
                 </p>
                 <a
-                  href={`https://wa.me/9891355956?text=Hi%2C%20I'm%20interested%20in%20${encodeURIComponent(product.title || product.sapExamCode)}`}
+                  href={`https://wa.me/9871952577?text=Hi%2C%20I'm%20interested%20in%20${encodeURIComponent(product.title || product.sapExamCode)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 w-full max-w-md mx-auto px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm sm:text-base rounded-lg shadow-md transition-all transform hover:-translate-y-0.5"

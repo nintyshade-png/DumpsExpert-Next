@@ -169,7 +169,7 @@ const ProductCard = memo(
 
             {product.showWpConnect ? (
               <a
-                href={`https://wa.me/9891355956?text=Hi%2C%20I'm%20interested%20in%20${encodeURIComponent(product.title || product.sapExamCode)}`}
+                href={`https://wa.me/9871952577?text=Hi%2C%20I'm%20interested%20in%20${encodeURIComponent(product.title || product.sapExamCode)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
