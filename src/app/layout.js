@@ -3,6 +3,9 @@ import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import Providers from "@/components/providers";
 import LayoutShell from "@/components/LayoutShell";
+
+import { GoogleAnalytics } from '@next/third-parties/google'
+
 // ✅ Font setup with only essential weights
 // ✅ Font - Only essential weights for faster load
 const inter = Inter({
@@ -242,6 +245,7 @@ export default function RootLayout({ children }) {
           </LayoutShell>
         </Providers>
       </body>
+      <GoogleAnalytics gaId="G-FDQ12ZVW9G" />
     </html>
   );
 }
