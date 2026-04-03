@@ -544,7 +544,7 @@ export default function ProductDetailsPage() {
       </div>
 
       {/* Product Unavailability Alert */}
-      {!productAvailable && product && (
+      {/* {!productAvailable && product && (
         <div className="container mx-auto px-2 sm:px-3 mb-1.5 sm:mb-2">
           <div className="bg-red-50 border-l-4 border-red-500 p-1.5 sm:p-2 rounded-lg shadow-sm">
             <div className="flex items-center gap-1.5">
@@ -561,7 +561,7 @@ export default function ProductDetailsPage() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="container mx-auto px-2 sm:px-3 flex flex-col lg:flex-row gap-2 lg:gap-3">
         {/* Left Column - Sticky on Desktop */}

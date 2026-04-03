@@ -173,7 +173,12 @@ export default function ProductsList({ products, coursename }) {
               <td className="px-4 py-3 text-right align-top space-y-1 whitespace-nowrap">
                 {product.showWpConnect ? (
                   <span className="block font-bold text-blue-600 text-sm">
-                    Contact for Best Price
+                    <a href={`https://wa.me/9871952577?text=Hi%2C%20I'm%20interested%20in%20${encodeURIComponent(product.title || product.sapExamCode)}`}
+                            target="_blank"
+                            rel="noopener noreferrer">
+Contact for Best Price 
+                            </a>
+                    
                   </span>
                 ) : (
                   <span className="block font-bold gap-1 text-green-600 text-base">
