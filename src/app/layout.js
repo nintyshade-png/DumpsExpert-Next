@@ -245,7 +245,7 @@ export default function RootLayout({ children }) {
           </LayoutShell>
         </Providers>
       </body>
-      <GoogleAnalytics gaId="G-FDQ12ZVW9G" />
+       
     </html>
   );
 }

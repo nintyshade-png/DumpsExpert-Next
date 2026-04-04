@@ -12,7 +12,7 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-
+ 
     await connectMongoDB(); 
 
     // For this example, we just update or create a single content entry

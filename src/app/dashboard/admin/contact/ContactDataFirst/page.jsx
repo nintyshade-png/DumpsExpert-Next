@@ -70,29 +70,27 @@ export default function ContactDataFirst() {
   }, []);
 
   // ✅ Save or update content
-  const handleSave = async () => {
-    try {
-      const method = contentId ? "PUT" : "POST"; // ✅ use PUT if existing
-      const res = await fetch(
-        `/api/content1${contentId ? `/${contentId}` : ""}`,
-        {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ html: content }),
-        }
-      );
+// ✅ Corrected handleSave
+const handleSave = async () => {
+  try {
+    const res = await fetch("/api/contact/ContactContentFirst", {
+      method: "POST", // Use POST for both creating and updating
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html: content }),
+    });
 
-      const data = await res.json();
-      if (data.success) {
-        alert("Content saved!");
-        if (data._id) setContentId(data._id); // in case it was a new record
-      } else {
-        alert("Failed to save content.");
-      }
-    } catch (error) {
-      console.error("Error saving content:", error);
+    const data = await res.json();
+    
+    if (res.ok && (data.success || data._id)) {
+      alert("Content saved!");
+      if (data.data?._id) setContentId(data.data._id);
+    } else {
+      alert("Failed to save content.");
     }
-  };
+  } catch (error) {
+    console.error("Error saving content:", error);
+  }
+};
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
