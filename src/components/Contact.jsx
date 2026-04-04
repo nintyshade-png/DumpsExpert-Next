@@ -197,7 +197,7 @@ const Contact = () => {
 
       {/* ✅ Lazy loaded components */}
       <ContactDataFirst />
-      <ContactDataSecond />
+      {/* <ContactDataSecond /> */}
     </div>
   );
 };
