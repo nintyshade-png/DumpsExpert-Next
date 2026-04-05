@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { CheckCircle, Zap, Award, Clock } from "lucide-react";
 
 // Assets
 import downloadable from "@/assets/unlockGoalsAssets/downloadable.jpg";
@@ -14,7 +13,6 @@ import validDumps from "@/assets/unlockGoalsAssets/validDumps.webp";
 import freesample from "@/assets/unlockGoalsAssets/freesample.webp";
 import specialDiscount from "@/assets/unlockGoalsAssets/specialDiscount.webp";
 
-// Enhanced Data with icons
 const cardData = [
   {
     icon: downloadable,
@@ -22,7 +20,9 @@ const cardData = [
     description:
       "The Prepmantras provides 100% original and verified updated IT Certification Prep for all exams.",
     badge: "PDF Download",
-    color: "from-blue-500 to-cyan-500",
+    accent: "#2563eb",
+    accentLight: "#eff6ff",
+    number: "01",
   },
   {
     icon: affordable,
@@ -30,7 +30,9 @@ const cardData = [
     description:
       "You will never have to pay much for these real exam questions. Our prices are very reasonable and affordable.",
     badge: "Budget Friendly",
-    color: "from-green-500 to-emerald-500",
+    accent: "#059669",
+    accentLight: "#ecfdf5",
+    number: "02",
   },
   {
     icon: moneyBack,
@@ -38,7 +40,9 @@ const cardData = [
     description:
       "We provide exact IT exam questions & answers at no risk to you. If our resources do not live up to expectations, you can claim a refund.",
     badge: "Risk Free",
-    color: "from-red-500 to-pink-500",
+    accent: "#dc2626",
+    accentLight: "#fff1f2",
+    number: "03",
   },
   {
     icon: support,
@@ -46,7 +50,9 @@ const cardData = [
     description:
       "We offer live customer support to make your learning process smooth and effortless. Reach out for any assistance.",
     badge: "Always Available",
-    color: "from-purple-500 to-pink-500",
+    accent: "#7c3aed",
+    accentLight: "#f5f3ff",
+    number: "04",
   },
   {
     icon: freeUpdate,
@@ -54,7 +60,9 @@ const cardData = [
     description:
       "We provide free 90 days of updates on all IT certification exam preparation materials.",
     badge: "90 Days Free",
-    color: "from-orange-500 to-red-500",
+    accent: "#ea580c",
+    accentLight: "#fff7ed",
+    number: "05",
   },
   {
     icon: validDumps,
@@ -62,7 +70,9 @@ const cardData = [
     description:
       "Prepmantras provides 100% valid IT exam questions and answers for certification success.",
     badge: "100% Valid",
-    color: "from-indigo-500 to-purple-500",
+    accent: "#0891b2",
+    accentLight: "#ecfeff",
+    number: "06",
   },
   {
     icon: freesample,
@@ -70,7 +80,9 @@ const cardData = [
     description:
       "You can try our Prepmantras for free before purchasing. Get a sample to check quality.",
     badge: "Try Free",
-    color: "from-teal-500 to-cyan-500",
+    accent: "#0d9488",
+    accentLight: "#f0fdfa",
+    number: "07",
   },
   {
     icon: specialDiscount,
@@ -78,198 +90,376 @@ const cardData = [
     description:
       "Enjoy limited-time discounts on top-selling certification Prep. Don't miss out!",
     badge: "Limited Offer",
-    color: "from-yellow-500 to-orange-500",
+    accent: "#d97706",
+    accentLight: "#fffbeb",
+    number: "08",
   },
 ];
 
+const stats = [
+  { value: "100%", label: "Verified Content" },
+  { value: "24/7", label: "Expert Support" },
+  { value: "90d", label: "Free Updates" },
+  { value: "50K+", label: "Professionals" },
+];
+
 const WhyChooseSection = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [visibleCards, setVisibleCards] = useState(new Set());
+  const cardRefs = useRef([]);
+  const scrollRef = useRef(null);
 
+  // Intersection observer for scroll-based active card tracking (desktop)
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const container = scrollRef.current;
+    if (!container) return;
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = parseInt(entry.target.dataset.index);
+            setActiveIndex(idx);
+          }
+        });
+      },
+      { root: container, threshold: 0.55 }
+    );
+
+    cardRefs.current.forEach((ref) => ref && observer.observe(ref));
+    return () => observer.disconnect();
   }, []);
 
+  // Mobile: staggered reveal
+  useEffect(() => {
+    const mobileObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = parseInt(entry.target.dataset.mobileindex);
+            setVisibleCards((prev) => new Set([...prev, idx]));
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    document.querySelectorAll("[data-mobileindex]").forEach((el) =>
+      mobileObserver.observe(el)
+    );
+    return () => mobileObserver.disconnect();
+  }, []);
+
+  const active = cardData[activeIndex];
+
   return (
-    <div className="w-full bg-gradient-to-b from-white via-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-12">
-      <div className="max-w-7xl mx-auto">
-        {/* Desktop View */}
-        <div className="hidden md:flex md:flex-row w-full min-h-[75vh] rounded-xl overflow-hidden shadow-lg">
-          {/* Sticky Left Panel */}
-          <div className="md:w-1/2 md:sticky md:top-0 h-auto md:h-[75vh] bg-gradient-to-br from-indigo-800 via-indigo-700 to-purple-800 text-white p-8 sm:p-12 flex flex-col justify-center items-center">
-            <div className="text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                  <Award className="text-white" size={32} />
-                </div>
-              </div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
-                Why Choose <br />
-                <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
-                  Prepmantras?
-                </span>
-              </h2>
-              <p className="text-sm md:text-base text-white/90 leading-relaxed max-w-lg">
-                Unlock your potential with our premium resources.
-                <br className="hidden sm:block" />
-                <span className="block mt-2">
-                  Real questions, real results, real support — all designed to
-                  help you succeed.
-                </span>
-              </p>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-              {/* Quick Stats */}
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle size={20} className="text-cyan-300" />
-                  <span className="text-sm">100% Verified Content</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Zap size={20} className="text-yellow-300" />
-                  <span className="text-sm">Instant Access</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock size={20} className="text-pink-300" />
-                  <span className="text-sm">24/7 Support</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        .wcs-root { font-family: 'DM Sans', sans-serif; }
+        .wcs-display { font-family: 'DM Serif Display', serif; }
 
-          {/* Scrollable Cards Section */}
-          <div className="md:w-1/2 bg-white h-[75vh] overflow-y-scroll snap-y snap-mandatory">
-            {cardData.map((card, index) => (
-              <section
-                key={index}
-                className="h-[75vh] snap-start flex flex-col items-center justify-center px-8 text-center"
-              >
-                <div className="relative mb-8">
-                  <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-lg border-4 border-white">
-                    <Image
-                      src={card.icon}
-                      alt={card.title}
-                      width={128}
-                      height={128}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                  <div
-                    className={`absolute -top-3 -right-3 px-3 py-1 bg-gradient-to-r ${card.color} text-white text-xs font-bold rounded-full shadow-lg`}
-                  >
-                    {card.badge}
-                  </div>
-                </div>
+        .wcs-scroll::-webkit-scrollbar { display: none; }
+        .wcs-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-                <h3 className="text-lg md:text-xl font-bold mb-3 text-gray-900">
-                  {card.title}
-                </h3>
-                <p className="max-w-2xl text-gray-600 text-sm md:text-base leading-relaxed">
-                  {card.description}
-                </p>
+        .wcs-card-enter { opacity: 0; transform: translateY(32px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .wcs-card-enter.visible { opacity: 1; transform: translateY(0); }
 
-                {/* Decorative line */}
-                <div className="mt-8 w-20 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
-              </section>
-            ))}
-          </div>
-        </div>
+        .wcs-number {
+          font-family: 'DM Serif Display', serif;
+          font-size: 7rem;
+          line-height: 1;
+          opacity: 0.06;
+          position: absolute;
+          right: 1.5rem;
+          top: 1rem;
+          pointer-events: none;
+          color: #0f172a;
+          transition: opacity 0.4s;
+        }
 
-        {/* Mobile View */}
-        <div className="md:hidden w-full bg-gradient-to-b from-white to-gray-100 py-12">
-          {/* Mobile Header */}
-          <div className="text-center mb-12">
-            <div className="mb-4 flex justify-center">
-              <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center">
-                <Award className="text-indigo-600" size={28} />
-              </div>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-gray-900">
-              Why Choose
-              <br />
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Prepmantras?
-              </span>
+        .wcs-tab:hover .wcs-number { opacity: 0.1; }
+
+        .progress-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #cbd5e1;
+          transition: all 0.4s cubic-bezier(.4,0,.2,1);
+          cursor: pointer;
+        }
+        .progress-dot.active {
+          width: 24px;
+          border-radius: 3px;
+        }
+
+        .wcs-left-panel {
+          background: #0c1523;
+          position: relative;
+          overflow: hidden;
+        }
+        .wcs-left-panel::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse at 30% 50%, rgba(37,99,235,0.18) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.12) 0%, transparent 50%);
+        }
+
+        .grid-lines {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+          background-size: 40px 40px;
+        }
+
+        .wcs-img-frame {
+          position: relative;
+          border-radius: 20px;
+          overflow: hidden;
+          transition: transform 0.5s cubic-bezier(.4,0,.2,1);
+        }
+        .wcs-img-frame::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(12,21,35,0.5) 0%, transparent 50%);
+        }
+
+        .stat-chip {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          backdrop-filter: blur(8px);
+          transition: background 0.3s;
+        }
+        .stat-chip:hover { background: rgba(255,255,255,0.1); }
+
+        .wcs-tab {
+          position: relative;
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #f1f5f9;
+          cursor: pointer;
+          transition: background 0.2s;
+          overflow: hidden;
+        }
+        .wcs-tab:hover { background: #fafafa; }
+        .wcs-tab.active-tab { background: #f8faff; }
+
+        .tab-accent-line {
+          position: absolute;
+          left: 0; top: 0; bottom: 0;
+          width: 3px;
+          border-radius: 0 2px 2px 0;
+          transform: scaleY(0);
+          transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+        }
+        .wcs-tab.active-tab .tab-accent-line { transform: scaleY(1); }
+
+        .badge-pill {
+          display: inline-flex;
+          align-items: center;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          padding: 3px 10px;
+          border-radius: 100px;
+          border: 1px solid currentColor;
+          opacity: 0.85;
+        }
+
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-up { animation: slideUp 0.45s ease forwards; }
+      `}</style>
+
+      <section className="wcs-root w-full bg-[#f8f9fb] py-16 px-4 sm:px-8 lg:px-16">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Section Label */}
+          <div className="mb-10">
+            <p className="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-3">Why us</p>
+            <h2 className="wcs-display text-4xl sm:text-5xl text-slate-900 leading-tight">
+              Why Choose <em>Prepmantras?</em>
             </h2>
-            <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
-              Real questions, real results, real support
-            </p>
           </div>
 
-          {/* Mobile Cards Grid */}
-          <div className="space-y-6 max-w-2xl mx-auto">
-            {cardData.map((card, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100"
-              >
-                {/* Card Image */}
-                <div
-                  className={`relative h-48 bg-gradient-to-br ${card.color} overflow-hidden`}
-                >
+          {/* ═══ DESKTOP LAYOUT ═══ */}
+          <div className="hidden lg:flex rounded-3xl overflow-hidden shadow-2xl" style={{ height: "78vh", minHeight: 560 }}>
+
+            {/* Left Dark Panel — sticky hero */}
+            <div className="wcs-left-panel w-[42%] flex flex-col justify-between p-10 relative">
+              <div className="grid-lines" />
+
+              {/* Active card hero content */}
+              <div className="relative z-10 flex-1 flex flex-col justify-center" key={activeIndex}>
+                {/* Image */}
+                <div className="wcs-img-frame mb-7 slide-up" style={{ height: 200 }}>
                   <Image
-                    src={card.icon}
-                    alt={card.title}
-                    width={300}
+                    src={active.icon}
+                    alt={active.title}
+                    width={480}
                     height={200}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/20"></div>
-
-                  {/* Badge */}
-                  <div
-                    className={`absolute top-3 right-3 px-3 py-1 bg-gradient-to-r ${card.color} text-white text-xs font-bold rounded-full shadow-lg`}
-                  >
-                    {card.badge}
-                  </div>
                 </div>
 
-                {/* Card Content */}
-                <div className="p-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 line-clamp-2">
-                    {card.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm sm:text-base leading-relaxed line-clamp-3">
-                    {card.description}
-                  </p>
+                {/* Badge */}
+                <div className="slide-up mb-3" style={{ animationDelay: "0.05s" }}>
+                  <span className="badge-pill" style={{ color: active.accent, borderColor: active.accent + "55" }}>
+                    {active.badge}
+                  </span>
+                </div>
 
-                  {/* Read More Link */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <button className="text-indigo-600 font-semibold text-sm">
-                      Learn More →
-                    </button>
-                  </div>
+                {/* Title */}
+                <h3 className="wcs-display text-white text-2xl leading-snug mb-3 slide-up" style={{ animationDelay: "0.1s" }}>
+                  {active.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-slate-400 text-sm leading-relaxed slide-up" style={{ animationDelay: "0.15s" }}>
+                  {active.description}
+                </p>
+
+                {/* Progress dots */}
+                <div className="flex items-center gap-2 mt-8 slide-up" style={{ animationDelay: "0.2s" }}>
+                  {cardData.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`progress-dot ${i === activeIndex ? "active" : ""}`}
+                      style={i === activeIndex ? { background: active.accent } : {}}
+                      onClick={() => {
+                        cardRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
+
+              {/* Stats row */}
+              {/* <div className="relative z-10 grid grid-cols-2 gap-2 mt-6">
+                {stats.map((s) => (
+                  <div key={s.label} className="stat-chip px-4 py-3">
+                    <div className="wcs-display text-white text-xl">{s.value}</div>
+                    <div className="text-slate-500 text-xs mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div> */}
+            </div>
+
+            {/* Right Scrollable Tabs */}
+            <div
+              ref={scrollRef}
+              className="wcs-scroll flex-1 bg-white overflow-y-scroll"
+              style={{ scrollSnapType: "y mandatory" }}
+            >
+              {cardData.map((card, i) => (
+                <div
+                  key={i}
+                  ref={(el) => (cardRefs.current[i] = el)}
+                  data-index={i}
+                  className={`wcs-tab ${activeIndex === i ? "active-tab" : ""}`}
+                  style={{ scrollSnapAlign: "start", minHeight: "calc(78vh / 4)", display: "flex", alignItems: "center" }}
+                  onClick={() => {
+                    cardRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    setActiveIndex(i);
+                  }}
+                >
+                  {/* Accent left line */}
+                  <div className="tab-accent-line" style={{ background: card.accent }} />
+
+                  {/* Number watermark */}
+                  <div className="wcs-number">{card.number}</div>
+
+                  {/* Thumbnail */}
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 mr-4 border border-slate-100">
+                    <Image src={card.icon} alt={card.title} width={56} height={56} className="w-full h-full object-cover" />
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 min-w-0 pr-12">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: card.accent }}>
+                        {card.number}
+                      </span>
+                      <span className="badge-pill text-[9px]" style={{ color: card.accent, borderColor: card.accent + "40" }}>
+                        {card.badge}
+                      </span>
+                    </div>
+                    <h4 className="text-slate-900 font-semibold text-sm leading-snug line-clamp-2">{card.title}</h4>
+                    {activeIndex === i && (
+                      <p className="text-slate-400 text-xs mt-1.5 leading-relaxed line-clamp-2 slide-up">{card.description}</p>
+                    )}
+                  </div>
+
+                  {/* Active arrow */}
+                  {activeIndex === i && (
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mr-1"
+                      style={{ background: card.accentLight }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6h8M7 3l3 3-3 3" stroke={card.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Mobile Stats */}
-          <div className="mt-12 grid grid-cols-2 gap-4 max-w-2xl mx-auto">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 text-center border border-blue-100">
-              <div className="text-2xl font-bold text-blue-600">100%</div>
-              <div className="text-xs text-gray-600 mt-1">Verified</div>
+          {/* ═══ MOBILE LAYOUT ═══ */}
+          <div className="lg:hidden">
+
+            {/* Mobile header stat strip */}
+            <div className="grid grid-cols-4 gap-2 mb-8">
+              {stats.map((s) => (
+                <div key={s.label} className="bg-white rounded-2xl p-3 text-center border border-slate-100 shadow-sm">
+                  <div className="wcs-display text-slate-900 text-lg">{s.value}</div>
+                  <div className="text-slate-400 text-[10px] mt-0.5 leading-tight">{s.label}</div>
+                </div>
+              ))}
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 text-center border border-purple-100">
-              <div className="text-2xl font-bold text-purple-600">24/7</div>
-              <div className="text-xs text-gray-600 mt-1">Support</div>
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 text-center border border-green-100">
-              <div className="text-2xl font-bold text-green-600">Free</div>
-              <div className="text-xs text-gray-600 mt-1">Updates</div>
-            </div>
-            <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 text-center border border-orange-100">
-              <div className="text-2xl font-bold text-orange-600">90 Days</div>
-              <div className="text-xs text-gray-600 mt-1">Money Back</div>
+
+            {/* Mobile cards — horizontal-accented list style */}
+            <div className="space-y-3">
+              {cardData.map((card, i) => (
+                <div
+                  key={i}
+                  data-mobileindex={i}
+                  className={`wcs-card-enter ${visibleCards.has(i) ? "visible" : ""} bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex`}
+                  style={{ transitionDelay: `${(i % 4) * 60}ms` }}
+                >
+                  {/* Left accent strip + number */}
+                  <div className="w-1 flex-shrink-0 rounded-l-2xl" style={{ background: card.accent }} />
+
+                  {/* Image */}
+                  <div className="w-20 h-20 flex-shrink-0 m-3 rounded-xl overflow-hidden border border-slate-100">
+                    <Image src={card.icon} alt={card.title} width={80} height={80} className="w-full h-full object-cover" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 py-3 pr-4 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[9px] font-bold" style={{ color: card.accent }}>{card.number}</span>
+                      <span className="badge-pill text-[9px]" style={{ color: card.accent, borderColor: card.accent + "40" }}>
+                        {card.badge}
+                      </span>
+                    </div>
+                    <h3 className="text-slate-900 font-semibold text-sm leading-snug line-clamp-2 mb-1">{card.title}</h3>
+                    <p className="text-slate-400 text-xs leading-relaxed line-clamp-2">{card.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   );
 };
 
