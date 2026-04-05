@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import Providers from "@/components/providers";
 import LayoutShell from "@/components/LayoutShell";
+ 
+import Script from "next/script";
 
 import { GoogleAnalytics } from '@next/third-parties/google'
 
@@ -231,6 +233,25 @@ export default function RootLayout({ children }) {
         className={`${inter.className} antialiased bg-white min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
+
+
+        {/* ✅ Google Analytics Raw Script Implementation */}
+  <Script
+    src="https://www.googletagmanager.com/gtag/js?id=G-FDQ12ZVW9G"
+    strategy="afterInteractive"
+  />
+  <Script id="google-analytics" strategy="afterInteractive">
+    {`
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-FDQ12ZVW9G');
+    `}
+  </Script>
+
+
+  
         {/* Skip to main content for accessibility */}
         <a
           href="#main-content"
