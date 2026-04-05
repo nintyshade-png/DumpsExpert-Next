@@ -111,13 +111,13 @@ const ProductCard = memo(
               quality={75}
             />
             {/* Availability Badge */}
-            {!isAvailable && (
+            {/* {!isAvailable && (
               <div className="absolute top-2 right-2">
                 <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500 text-white">
                   Out of Stock
                 </span>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Product Title */}

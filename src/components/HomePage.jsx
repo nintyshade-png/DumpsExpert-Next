@@ -414,25 +414,48 @@ export default function HomePage({
           <div className="max-w-7xl mx-auto">
 
             {/* Section header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-              <div>
-                <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "#e07b39" }}>
-                  🔥 Trending Now
-                </p>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
-                  Popular Certification Exams
-                </h2>
-                <p className="text-slate-400 text-sm mt-1.5">Most-pursued by professionals this month</p>
-              </div>
-              {trendingItems?.length > 0 && (
-                <Link href="/itcertifications">
-                  <button className="text-sm font-semibold px-5 py-2.5 rounded-xl border-2 transition-all hover:-translate-y-0.5 whitespace-nowrap"
-                    style={{ borderColor: "#e07b39", color: "#e07b39", background: "rgba(224,123,57,0.05)" }}>
-                    View All →
-                  </button>
-                </Link>
-              )}
-            </div>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "2.5rem", gap: "1rem", flexWrap: "wrap" }}>
+  <div>
+    <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#e07b39", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#e07b39", display: "inline-block", animation: "pulse 2s infinite" }} />
+      Trending Now
+    </p>
+    <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 900, color: "#0f172a", lineHeight: 1.2, margin: 0 }}>
+      Popular Certification Exams
+    </h2>
+    <p style={{ fontSize: "13px", color: "#94a3b8", marginTop: "6px", margin: "6px 0 0" }}>
+      Most-pursued by professionals this month
+    </p>
+  </div>
+
+  {trendingItems?.length > 0 && (
+    <Link href="/itcertifications" style={{ flexShrink: 0 }}>
+      <button style={{
+        fontSize: "12px",
+        fontWeight: 600,
+        padding: "9px 20px",
+        borderRadius: "12px",
+        border: "1.5px solid #e07b39",
+        color: "#e07b39",
+        background: "rgba(224,123,57,0.05)",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        display: "flex",
+        alignItems: "center",
+        gap: "5px",
+        transition: "background 0.2s, transform 0.15s",
+      }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(224,123,57,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(224,123,57,0.05)"; e.currentTarget.style.transform = "translateY(0)"; }}
+      >
+        View All
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </button>
+    </Link>
+  )}
+</div>
 
             {/* Grid */}
             {trendingItems?.length > 0 ? (
@@ -489,19 +512,27 @@ export default function HomePage({
     <div className="tc-root max-w-7xl mx-auto">
 
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
-        <div>
-          <p className="text-xs font-bold tracking-widest uppercase text-slate-400 mb-2">Browse by category</p>
-          <h2 className="tc-display text-3xl sm:text-4xl text-slate-900 leading-tight">
-            Trending <em>Categories</em>
-          </h2>
-          <p className="text-slate-400 text-sm mt-2">Top-rated products across the most popular certifications</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400 flex-shrink-0">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-          {trendingCategories.length} active {trendingCategories.length === 1 ? "category" : "categories"}
-        </div>
-      </div>
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: "1rem", marginBottom: "3rem", flexWrap: "wrap" }}>
+  <div>
+    <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94a3b8", marginBottom: "6px", margin: "0 0 6px" }}>
+      Browse by category
+    </p>
+    <h2 className="tc-display" style={{ fontSize: "clamp(1.75rem, 4vw, 2.25rem)", color: "#0f172a", lineHeight: 1.2, margin: "0 0 6px" }}>
+      Trending <em>Categories</em>
+    </h2>
+    <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>
+      Top-rated products across the most popular certifications
+    </p>
+  </div>
+
+  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#94a3b8", flexShrink: 0 }}>
+    <span style={{
+      width: 8, height: 8, borderRadius: "50%", background: "#34d399", display: "inline-block",
+      animation: "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite",
+    }} />
+    {trendingCategories.length} active {trendingCategories.length === 1 ? "category" : "categories"}
+  </div>
+</div>
 
       {/* Category Blocks */}
       <div className="flex flex-col gap-6">
