@@ -314,7 +314,7 @@ export default function ExamDumpsSlider({ products = [] }) {
   }
 
   return (
-    <div className="w-full py-16 px-4 sm:px-6 lg:px-12 bg-gradient-to-b from-gray-50 to-white">
+    <div className="w-full py-4 px-4 sm:px-6 lg:px-12 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

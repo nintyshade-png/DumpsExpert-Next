@@ -206,7 +206,7 @@ async function fetchContent2() {
 }
 
 async function fetchProducts() {
-  const result = await fetchWithTimeout("/api/products?limit=6", 8000);
+  const result = await fetchWithTimeout("/api/products?limit=30", 8000);
   if (result.error) return [];
 
   const data = result.data;

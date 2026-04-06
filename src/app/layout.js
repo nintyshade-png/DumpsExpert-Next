@@ -236,6 +236,8 @@ export default function RootLayout({ children }) {
 
 
         {/* ✅ Google Analytics Raw Script Implementation */}
+
+        
   <Script
     src="https://www.googletagmanager.com/gtag/js?id=G-FDQ12ZVW9G"
     strategy="afterInteractive"
@@ -251,7 +253,7 @@ export default function RootLayout({ children }) {
   </Script>
 
 
-  
+
         {/* Skip to main content for accessibility */}
         <a
           href="#main-content"

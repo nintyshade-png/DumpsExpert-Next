@@ -250,7 +250,7 @@ export default async function CategoryPage({ params, searchParams }) {
         {category && (
           <div className="mb-4 sm:mb-5 md:mb-6 shadow-md rounded-xl border border-gray-200 p-3.5 sm:p-4 md:p-5 bg-white">
             <h1 className="text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-2.5 md:mb-3 leading-tight">
-              {category.name.toUpperCase()} Exam Dumps [2025]
+              {category.name.toUpperCase()} Exam Dumps [{new Date().getFullYear()}]
             </h1>
             {category.description && (
               <div

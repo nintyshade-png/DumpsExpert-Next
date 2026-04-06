@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, AlertCircle, ArrowUp } from "lucide-react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import banner from "@/assets/landingassets/banner.webp";
+import banner from "@/assets/landingassets/img1.webp";
 
 const LoadingBox = () => (
   <div className="py-8 px-4">
@@ -323,11 +323,11 @@ export default function HomePage({
             <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #7aa93c, transparent 70%)" }}></div>
           </div>
 
-          <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-16 pt-24 pb-16 flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
+          <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-16 pt-20 pb-16 flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
             {/* Left Content */}
             <div className="w-full lg:w-[52%]">
               {/* Eyebrow pill */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-6 border"
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-3 border"
                 style={{ background: "rgba(19,103,124,0.07)", color: "#13677c", borderColor: "rgba(19,103,124,0.15)" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#13677c] animate-pulse inline-block"></span>
                 Trusted by 50,000+ professionals
@@ -341,7 +341,7 @@ export default function HomePage({
                 </span>
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-500 mb-8 leading-relaxed max-w-xl">
+              <p className="text-base sm:text-lg text-slate-500 mb-4 leading-relaxed max-w-xl">
                 Prepmantras offers industry-validated study materials, real exam prep, and browser-based practice tests to help you get certified faster — and smarter.
               </p>
 
@@ -410,7 +410,7 @@ export default function HomePage({
         </section>
 
         {/* ─── TRENDING CERTIFICATIONS ─── */}
-        <section id="trending" className="py-16 sm:py-20 px-5 sm:px-8 lg:px-16">
+        <section id="trending" className="py-10 sm:py-10 px-5 sm:px-8 lg:px-16">
           <div className="max-w-7xl mx-auto">
 
             {/* Section header */}
@@ -506,7 +506,7 @@ export default function HomePage({
 
         {/* ─── TRENDING CATEGORIES & PRODUCTS ─── */}
        {trendingCategories?.length > 0 && (
-  <section className="py-16 sm:py-24 px-5 sm:px-8 lg:px-16 bg-[#f8f9fb]">
+  <section className="py-10 sm:py-10 px-5 sm:px-8 lg:px-16 bg-[#f8f9fb]">
     
 
     <div className="tc-root max-w-7xl mx-auto">
@@ -672,11 +672,11 @@ export default function HomePage({
 )}
 
         {/* ─── Lazy-loaded Sections (unchanged) ─── */}
-        {blogs.length > 0 && <BlogSection blogs={blogs} categories={categories} />}
+        {/* {blogs.length > 0 && <BlogSection blogs={blogs} categories={categories} />} */}
         {products.length > 0 && <ExamDumpsSlider products={products} />}
         {content1 && <ContentDumpsFirst content={content1} />}
         <UnlockGoals />
-        {content2 && <ContentDumpsSecond content={content2} />}
+        {/* {content2 && <ContentDumpsSecond content={content2} />} */}
         <Testimonial />
         {faqs.length > 0 && <GeneralFAQs faqs={faqs} />}
       </div>
