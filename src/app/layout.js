@@ -265,9 +265,10 @@ export default function RootLayout({ children }) {
         <Providers>
           <LayoutShell navbar={<Navbar />} footer={<Footer />}>
             {children}
-            <GoogleAnalytics gaId="G-J3N0F1VNSN" />
+           
           </LayoutShell>
         </Providers>
+         <GoogleAnalytics gaId="G-J3N0F1VNSN" />
       </body>
        
     </html>
