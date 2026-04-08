@@ -238,7 +238,7 @@ export default function RootLayout({ children }) {
         {/* ✅ Google Analytics Raw Script Implementation */}
 
         
-  <Script
+  {/* <Script
     src="https://www.googletagmanager.com/gtag/js?id=G-J3N0F1VNSN"
     strategy="afterInteractive"
   />
@@ -250,7 +250,7 @@ export default function RootLayout({ children }) {
 
       gtag('config', 'G-J3N0F1VNSN');
     `}
-  </Script>
+  </Script> */}
 
 
 
@@ -265,6 +265,7 @@ export default function RootLayout({ children }) {
         <Providers>
           <LayoutShell navbar={<Navbar />} footer={<Footer />}>
             {children}
+            <GoogleAnalytics gaId="G-J3N0F1VNSN" />
           </LayoutShell>
         </Providers>
       </body>
